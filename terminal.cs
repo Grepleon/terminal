@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices.JavaScript;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace Console2
 {
@@ -43,6 +44,7 @@ namespace Console2
         static string Rep(string x)
         {
             return x.Replace("\\n", "\n").Replace("\\`", "\\")
+                .Replace("\\s", " ") // это важно, т. к. в моменте идет разделение пробелом
                 .Replace("\\[", "{").Replace("\\]", "}") // для фигурных скобок
                 
                 
@@ -409,12 +411,48 @@ namespace Console2
 
                 if (A[0] == "create")
                 {
+                    string filePath = A[2];
+
+
+                    is_command = true;
+
+
+                }
+
+                if (A[0] == "del")
+                {
+                    string filePath = A[2];
+
+
                     is_command = true;
                 }
 
+                if (A[0] == "read")
+                {
+                    string filePath = A[2];
 
 
-                if (a == "clear")
+                    is_command = true;
+
+
+                }
+
+                if (A[0] == "write")
+                {
+                    string filePath = A[2];
+
+
+                    is_command = true;
+
+
+                }
+
+            }
+
+
+
+
+            if (a == "clear")
                 {
                     is_command = true;
                     Console.Clear();
