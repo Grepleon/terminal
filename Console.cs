@@ -1,11 +1,13 @@
+using System;
 using System.Collections.Specialized;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.JavaScript;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using static System.Net.Mime.MediaTypeNames;
-using System;
-using System.IO;
 
 namespace Console2
 {
@@ -78,9 +80,6 @@ namespace Console2
 
 
             X = x.Replace("\\n", "\n") // \n - аналогично enter
-                .Replace("\\[", "{").Replace("\\]", "}"); // для фигурных 
-
-            X = X.Replace("\\`", "\\") // это обязательно делать в конец
 
             ; // по идеи этого достаточно для полноценной системы
 
@@ -95,6 +94,8 @@ namespace Console2
 
             X = x.Replace("\\n", "\n") // \n - аналогично enter
                 .Replace("\\s", " ") // это важно, т. к. в моменте идет разделение пробелом
+                .Replace("\\0", "") // иногда это важно и можно сказать спасает
+                .Replace("\\*", "")
                 .Replace("\\[", "{").Replace("\\]", "}"); // для фигурных 
 
             X = X.Replace("\\`", "\\") // это обязательно делать в конец
@@ -327,66 +328,154 @@ namespace Console2
             while (true)
             {
                 Console.Write("");
-                is_command = false;
+                is_command = false; bool is_many = false;
                 a = Console.ReadLine();
+                if (a.Contains("\\*")) {
+                    is_many = true;
+                }
+                while (is_many) {
+                    Console.Write(">\r");
+                    string _a = Console.ReadLine();
+                    a += "\n" +_a;
+                    if (_a.Contains("\\*")) {
+                        is_many = false;
+                    }
+                }
+
                 A = new List<string>(Parse(a));
 
-                if (a == "exit")
+                try
                 {
-                    is_command = true;
-                    Console.WriteLine(">Выход из программы");
-                    break;
-                }
-
-                if (a == "history")
-                {
-                    is_command = true;
-                    Console.WriteLine(">Ваша история команд:\n" + string_(History, "\n"));
-                }
-
-                // япшное
-
-                if (A[0] == "print")
-                {
-                    is_command = true;
-                    Console.WriteLine(Rep(ColorRep(sob(A, 2))));
-                }
-
-                if (A[0] == "set") // set(0) (1) int(2) (3) name(4)  (5) val(6)
-                {
-                    is_command = true;
-
-                    if (A[2] == "str")
+                    if (a == "exit")
                     {
-                        string val = Rep(sob(A, 6));
-                        if (!inA(A, A[4]))
-                            Var_str.Add(new str_cl(A[4], val));
-                        else
+                        is_command = true;
+                        Console.WriteLine(">Выход из программы");
+                        break;
+                    }
+
+                    if (a == "history")
+                    {
+                        is_command = true;
+                        Console.WriteLine(">Ваша история команд:\n" + string_(History, "\n"));
+                    }
+
+                    // япшное
+
+                    if (A[0] == "print")
+                    {
+                        is_command = true;
+                        Console.WriteLine(Rep(ColorRep(sob(A, 2))));
+                    }
+
+                    if (A[0] == "echo")
+                    {
+                        is_command = true;
+                        Console.Write(Rep(ColorRep(sob(A, 2)))); // без WriteLine
+                    }
+
+                    if (a == "vars" || a == "variables")
+                    {
+                        is_command = true;
+                        Console.WriteLine("Строковые переменные:");
+                        foreach (var v in Var_str)
                         {
-                            n = findA(A, A[4]);
-                            Var_str[n] = new str_cl(A[4], val);
+                            Console.WriteLine($"  {v.name} = \"{v.value}\"");
+                        }
+                        Console.WriteLine("Числовые переменные:");
+                        foreach (var v in Var_int)
+                        {
+                            Console.WriteLine($"  {v.name} = {v.value}");
                         }
                     }
-                    if (A[2] == "int")
-                    {
-                        int val = int.Parse(Rep(sob(A, 6)));
-                        if (!inA(A, A[4]))
-                            Var_int.Add(new int_cl(A[4], val));
-                        else
-                        {
-                            n = findA(A, A[4]);
-                            Var_int[n] = new int_cl(A[4], val);
-                        }
-                    }
-                }
 
-                if (true)
-                {  // нежелательно, но можно без 
-                    if (A[0] == "str")
+                    if (A[0] == "set") // set(0) (1) int(2) (3) name(4)  (5) val(6)
                     {
                         is_command = true;
 
-                        string val = Rep(sob(A, 4));
+                        if (A[2] == "str")
+                        {
+                            string val = Rep(sob(A, 6));
+                            if (!inA(A, A[4]))
+                                Var_str.Add(new str_cl(A[4], val));
+                            else
+                            {
+                                n = findA(A, A[4]);
+                                Var_str[n] = new str_cl(A[4], val);
+                            }
+                        }
+                        if (A[2] == "int")
+                        {
+                            int val = int.Parse(Rep(sob(A, 6)));
+                            if (!inA(A, A[4]))
+                                Var_int.Add(new int_cl(A[4], val));
+                            else
+                            {
+                                n = findA(A, A[4]);
+                                Var_int[n] = new int_cl(A[4], val);
+                            }
+                        }
+                    }
+
+                    if (true)
+                    {  // нежелательно, но можно без 
+                        if (A[0] == "str")
+                        {
+                            is_command = true;
+
+                            string val = Rep(sob(A, 4));
+                            if (!inA(A, A[2]))
+                                Var_str.Add(new str_cl(A[2], val));
+                            else
+                            {
+                                n = findA(A, A[2]);
+                                Var_str[n] = new str_cl(A[2], val);
+                            }
+                        }
+                        if (A[0] == "int")
+                        {
+                            is_command = true;
+
+                            int val = int.Parse(Rep(sob(A, 4)));
+                            if (!inA(A, A[2]))
+                                Var_int.Add(new int_cl(A[2], val));
+                            else
+                            {
+                                n = findA(A, A[2]);
+                                Var_int[n] = new int_cl(A[2], val);
+                            }
+                        }
+                    }
+
+                    if (A[0] == "del_var" && A.Count > 1)
+                    {
+                        is_command = true;
+                        string varName = A[2];
+
+                        // Удалить из Var_str
+                        for (int i = Var_str.Count - 1; i >= 0; i--)
+                        {
+                            if (Var_str[i].name == varName)
+                            {
+                                Var_str.RemoveAt(i);
+                            }
+                        }
+
+                        // Удалить из Var_int
+                        for (int i = Var_int.Count - 1; i >= 0; i--)
+                        {
+                            if (Var_int[i].name == varName)
+                            {
+                                Var_int.RemoveAt(i);
+                            }
+                        }
+                    }
+
+                    if (A[0] == "get")
+                    {
+                        is_command = true;
+
+                        Console.Write(green + ">\r"); // чтоб было визуальное сопровождение
+                        string val = Console.ReadLine();
                         if (!inA(A, A[2]))
                             Var_str.Add(new str_cl(A[2], val));
                         else
@@ -394,335 +483,530 @@ namespace Console2
                             n = findA(A, A[2]);
                             Var_str[n] = new str_cl(A[2], val);
                         }
+                        Console.Write(select_color);
                     }
-                    if (A[0] == "int")
+
+
+
+                    if (!inA(A, A[0]))
+                    {    // конвертатор типов данных
+                        n = findA(A, A[0]);
+                        t = inO(A, A[0]);
+                        if (t == "int")
+                        {
+                            int value = Var_int[n].value;
+                            if (A[2] == "to")
+                            {
+                                is_command = true;
+
+                                if (A[4] == "str")
+                                {
+                                    Var_int.RemoveAt(n);
+                                    Var_str.Add(new str_cl(A[0], value.ToString()));
+                                }
+                            }
+                        }
+
+                        if (t == "str")
+                        {
+                            string value = Var_str[n].value;
+                            if (A[2] == "to")
+                            {
+                                is_command = true;
+
+                                if (A[4] == "int")
+                                {
+                                    Var_int.RemoveAt(n);
+                                    Var_int.Add(new int_cl(A[0], Convert.ToInt32(value)));
+                                }
+                            }
+                        }
+
+
+                    }
+
+                    if (A[0] == "add")
                     {
                         is_command = true;
+                        string reg = Rep(sob(A, 4));
 
-                        int val = int.Parse(Rep(sob(A, 4)));
-                        if (!inA(A, A[2]))
-                            Var_int.Add(new int_cl(A[2], val));
-                        else
-                        {
-                            n = findA(A, A[2]);
-                            Var_int[n] = new int_cl(A[2], val);
-                        }
-                    }
-                }
-
-                if (A[0] == "get")
-                {
-                    is_command = true;
-
-                    Console.Write(green + ">\r"); // чтоб было визуальное сопровождение
-                    string val = Console.ReadLine();
-                    if (!inA(A, A[2]))
-                        Var_str.Add(new str_cl(A[2], val));
-                    else
-                    {
                         n = findA(A, A[2]);
-                        Var_str[n] = new str_cl(A[2], val);
-                    }
-                    Console.Write(select_color);
-                }
+                        t = inO(A, A[2]);
 
-                if (!inA(A, A[0]))
-                {    // конвертатор типов данных
-                    n = findA(A, A[0]);
-                    t = inO(A, A[0]);
-                    if (t == "int")
-                    {
-                        int value = Var_int[n].value;
-                        if (A[2] == "to")
+                        if (t == "int")
                         {
-                            is_command = true;
-
-                            if (A[4] == "str")
-                            {
-                                Var_int.RemoveAt(n);
-                                Var_str.Add(new str_cl(A[0], value.ToString()));
-                            }
+                            Var_int[n].value += int.Parse(reg);
+                        }
+                        if (t == "str")
+                        {
+                            Var_str[n].value += sob(A, 4);
                         }
                     }
 
-                    if (t == "str")
+                    if (A[0] == "sub")
                     {
-                        string value = Var_str[n].value;
-                        if (A[2] == "to")
-                        {
-                            is_command = true;
+                        is_command = true;
+                        string reg = Rep(sob(A, 4));
 
-                            if (A[4] == "int")
-                            {
-                                Var_int.RemoveAt(n);
-                                Var_int.Add(new int_cl(A[0], Convert.ToInt32(value)));
-                            }
+
+                        n = findA(A, A[2]);
+                        t = inO(A, A[2]);
+
+                        if (t == "int")
+                        { // это только для чисел
+                            Var_int[n].value -= int.Parse(reg);
                         }
                     }
 
-
-                }
-
-                if (A[0] == "add") {
-                    is_command = true;
-                    string reg = Rep(sob(A, 4));
-
-                    n = findA(A, A[2]);
-                    t = inO(A, A[2]);
-
-                    if (t == "int") {
-                        Var_int[n].value += int.Parse(reg);
-                    }
-                    if (t == "str"){
-                        Var_str[n].value += sob(A, 4);
-                    }
-                }
-
-                if (A[0] == "sub")
-                {
-                    is_command = true;
-                    string reg = Rep(sob(A, 4));
-
-
-                    n = findA(A, A[2]);
-                    t = inO(A, A[2]);
-
-                    if (t == "int")
-                    { // это только для чисел
-                        Var_int[n].value -= int.Parse(reg);
-                    }
-                }
-
-                if (A[0] == "multy")
-                {
-                    is_command = true;
-                    string reg = Rep(sob(A, 4));
-
-
-                    n = findA(A, A[2]);
-                    t = inO(A, A[2]);
-
-                    if (t == "int")
-                    { 
-                        Var_int[n].value *= int.Parse(reg);
-                    }
-
-                    if (t == "str")
-                    { 
-                        string val = Var_str[n].value;
-                        for (int i = 0; i < int.Parse(reg); i++) Var_str[n].value += val;
-                    }
-                }
-
-                if (A[0] == "div")
-                {
-                    is_command = true;
-                    string reg = Rep(sob(A, 4));
-
-
-                    n = findA(A, A[2]);
-                    t = inO(A, A[2]);
-
-                    if (t == "int")
+                    if (A[0] == "multy")
                     {
-                        Var_int[n].value /= int.Parse(reg); // внимание оно округлит
+                        is_command = true;
+                        string reg = Rep(sob(A, 4));
+
+
+                        n = findA(A, A[2]);
+                        t = inO(A, A[2]);
+
+                        if (t == "int")
+                        {
+                            Var_int[n].value *= int.Parse(reg);
+                        }
+
+                        if (t == "str")
+                        {
+                            string val = Var_str[n].value;
+                            for (int i = 0; i < int.Parse(reg); i++) Var_str[n].value += val;
+                        }
                     }
-                }
+
+                    if (A[0] == "div")
+                    {
+                        is_command = true;
+                        string reg = Rep(sob(A, 4));
+
+
+                        n = findA(A, A[2]);
+                        t = inO(A, A[2]);
+
+                        if (t == "int")
+                        {
+                            Var_int[n].value /= int.Parse(reg); // внимание оно округлит
+                        }
+                    }
 
 
                     if (A[0] == "color")
-                {
-                    is_command = true;
+                    {
+                        is_command = true;
 
 
-                    if (A[2] == "reset")
-                    {
-                        Console.Write(reset);
-                        select_color = reset;
-                    } // еще цветов пописать
-                    else if (A[2] == "white")
-                    {
-                        Console.Write(white);
-                        select_color = white;
-                    }
-                    else if (A[2] == "black")
-                    {
-                        Console.Write(black);
-                        select_color = black;
-                    }
-                    else if (A[2] == "blue")
-                    {
-                        Console.Write(blue);
-                        select_color = blue;
-                    }
-                    else if (A[2] == "green")
-                    {
-                        Console.Write(green);
-                        select_color = green;
-                    }
-                    else if (A[2] == "red")
-                    {
-                        Console.Write(red);
-                        select_color = red;
-                    }
-                    else
-                    {
-
-                        if (A[2] == "rgb")
+                        if (A[2] == "reset")
                         {
-                            List<string> parametrs = new List<string>(Rep(sob(A, 4)).Split(" "));
-
-                            string rgb = $"\u001b[38;2;{parametrs[0]};{parametrs[1]};{parametrs[2]}m";
-                            Console.Write(rgb);
-                            select_color = rgb;
+                            Console.Write(reset);
+                            select_color = reset;
+                        } // еще цветов пописать
+                        else if (A[2] == "white")
+                        {
+                            Console.Write(white);
+                            select_color = white;
                         }
-                        else if (A[2] == "hex")
-                        { // сделаю позже
-                            string hex = sob(A, 4);
-                            string rgb = $"\u001b[38;2;{sob(A, 4, 4)};{sob(A, 6, 6)};{sob(A, 8, 8)}m";
-                            Console.Write(rgb);
-                            select_color = rgb;
+                        else if (A[2] == "black")
+                        {
+                            Console.Write(black);
+                            select_color = black;
+                        }
+                        else if (A[2] == "blue")
+                        {
+                            Console.Write(blue);
+                            select_color = blue;
+                        }
+                        else if (A[2] == "green")
+                        {
+                            Console.Write(green);
+                            select_color = green;
+                        }
+                        else if (A[2] == "red")
+                        {
+                            Console.Write(red);
+                            select_color = red;
+                        }
+                        else
+                        {
+
+                            if (A[2] == "rgb")
+                            {
+                                List<string> parametrs = new List<string>(Rep(sob(A, 4)).Split(" "));
+
+                                string rgb = $"\u001b[38;2;{parametrs[0]};{parametrs[1]};{parametrs[2]}m";
+                                Console.Write(rgb);
+                                select_color = rgb;
+                            }
+                            else if (A[2] == "hex")
+                            { // сделаю позже
+                                string hex = sob(A, 4);
+                                string rgb = $"\u001b[38;2;{sob(A, 4, 4)};{sob(A, 6, 6)};{sob(A, 8, 8)}m";
+                                Console.Write(rgb);
+                                select_color = rgb;
+                            }
+
+                        }
+                    }
+
+                    // файлы
+
+                    if (A[0] == "write")
+                    {
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep(i));
                         }
 
+                        string filePath = reg[0].Replace("\n", "\\n");
+                        string text = sob2(reg, 1);
+
+                        File.WriteAllTextAsync(filePath, text, Encoding.UTF8);
+
+
+                        is_command = true;
+
+
                     }
-                }
 
-                // файлы
-
-                if (A[0] == "write")
-                {
-                    List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
-                    var reg = new List<string>();
-                    foreach (string i in reg2)
+                    if (A[0] == "append")
                     {
-                        reg.Add(Rep(i));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep(i));
+                        }
+
+                        string filePath = reg[0].Replace("\n", "\\n");
+                        string text = sob2(reg, 1);
+
+                        File.AppendAllText(filePath, text, Encoding.UTF8);
                     }
 
-                    string filePath = reg[0];
-                    string text = sob2(reg, 1);
-
-                    File.WriteAllTextAsync(filePath, text, Encoding.UTF8);
-
-
-                    is_command = true;
-
-
-                }
-
-                if (A[0] == "del")
-                {
-                    List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
-                    var reg = new List<string>();
-                    foreach (string i in reg2)
+                    if (A[0] == "del")
                     {
-                        reg.Add(Rep(i));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep(i));
+                        }
+
+                        string filePath = reg[0].Replace("\n", "\\n");
+
+                        if (File.Exists(filePath))
+                        { File.Delete(filePath); }
+
+
+                        is_command = true;
                     }
 
-                    string filePath = reg[0];
-
-                    if (File.Exists(filePath))
-                    { File.Delete(filePath); }
-
-
-                    is_command = true;
-                }
-
-                if (A[0] == "del_rf") // удалять рекурсивно
-                {
-                    List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
-                    var reg = new List<string>();
-                    foreach (string i in reg2)
+                    if (A[0] == "del_rf") // удалять рекурсивно
                     {
-                        reg.Add(Rep(i));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep(i));
+                        }
+
+                        string folderPath = reg[0].Replace("\n", "\\n");
+
+                        Directory.Delete(folderPath, recursive: true);
+
+
+                        is_command = true;
                     }
 
-                    string folderPath = reg[0];
-
-                    Directory.Delete(folderPath, recursive: true);
-
-
-                    is_command = true;
-                }
-
-                if (A[0] == "read")
-                {
-                    List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
-                    var reg = new List<string>();
-                    foreach (string i in reg2)
+                    if (A[0] == "read")
                     {
-                        reg.Add(Rep(i));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep(i));
+                        }
+
+                        string filePath = reg[0].Replace("\n", "\\n");
+
+
+                        is_command = true;
+
+                        string allContent = File.ReadAllText(filePath, Encoding.UTF8);
+
+
+                        Console.WriteLine(allContent);
+
+
                     }
 
-                    string filePath = reg[0];
-
-
-                    is_command = true;
-
-                    string allContent = File.ReadAllText(filePath, Encoding.UTF8);
-
-
-                    Console.WriteLine(allContent);
-
-
-                }
-
-                if (A[0] == "create_nwv")// nwv - not with var, типо не с переменными и без интерполяцией (что невсегда удобно)
-                {
-                    string filePath = A[2];
-
-                    using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8)) { writer.WriteLine(""); }; // по умолчанию файл пустой
-
-                    is_command = true;
-
-
-                }
-
-                if (A[0] == "create")
-                {
-                    List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
-                    var reg = new List<string>(); 
-                    foreach (string i in reg2) { 
-                        reg.Add(Rep(i));
-                    }
-
-                    string filePath = reg[0];
-
-                    using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8)) { writer.WriteLine(""); }
-                    ; // по умолчанию файл пустой
-
-                    is_command = true;
-
-                }
-
-                if (A[0] == "create_rep") // создать папку 
-                {
-                    List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
-                    var reg = new List<string>();
-                    foreach (string i in reg2)
+                    if (A[0] == "read_var")
                     {
-                        reg.Add(Rep(i));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep(i));
+                        }
+
+                        string name_var = reg[0];
+                        string filePath = reg[1].Replace("\n", "\\n");
+
+
+                        is_command = true;
+
+                        string allContent = File.ReadAllText(filePath, Encoding.UTF8);
+
+
+                        string val = allContent;
+                        if (!inA(A, A[2]))
+                            Var_str.Add(new str_cl(A[2], val));
+                        else
+                        {
+                            n = findA(A, A[2]);
+                            Var_str[n] = new str_cl(A[2], val);
+                        }
+
+
                     }
 
-                    string folderPath = reg[0];
+                    if (A[0] == "create_nwv")// nwv - not with var, типо не с переменными и без интерполяцией (что невсегда удобно)
+                    {
+                        string filePath = A[2];
 
-                    DirectoryInfo directoryInfo = Directory.CreateDirectory(folderPath);
+                        using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8)) { writer.WriteLine(""); }
+                        ; // по умолчанию файл пустой
 
-                    is_command = true;
+                        is_command = true;
 
+
+                    }
+
+                    if (A[0] == "create")
+                    {
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep(i));
+                        }
+
+                        string filePath = reg[0].Replace("\n", "\\n");
+
+                        using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8)) { writer.WriteLine(""); }
+                        ; // по умолчанию файл пустой
+
+                        is_command = true;
+
+                    }
+
+                    if (A[0] == "create_rep") // создать папку 
+                    {
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep(i));
+                        }
+
+                        string folderPath = reg[0].Replace("\n", "\\n");
+
+                        DirectoryInfo directoryInfo = Directory.CreateDirectory(folderPath);
+
+                        is_command = true;
+
+                    }
+
+                    if (A[0] == "open")
+                    {
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep(i));
+                        }
+
+                        string filePath = reg[0].Replace("\n", "\\n");
+
+                        try
+                        {
+                            // Вариант 1: С ProcessStartInfo
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = filePath,
+                                UseShellExecute = true  // Важно для Windows!
+                            });
+
+                            // Или вариант 2: Проверить существование
+                            if (File.Exists(filePath))
+                            {
+                                Process.Start(filePath);
+                            }
+                            else
+                            {
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
+
+                        is_command = true;
+                    }
+
+                    if (A[0] == "exists")
+                    {
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep(i));
+                        }
+
+                        string path = reg[0].Replace("\n", "\\n");
+                        if (File.Exists(path))
+                            Console.WriteLine($"Файл '{path}' существует");
+                        else if (Directory.Exists(path))
+                            Console.WriteLine($"Папка '{path}' существует");
+                        else
+                            Console.WriteLine($"'{path}' не найден");
+                    }
+
+                    if (A[0] == "dir" || A[0] == "ls")
+                    {
+                        is_command = true;
+                        string path = ".";
+                        if (A.Count > 1) path = Rep(sob(A, 2, 2));
+
+                        if (Directory.Exists(path))
+                        {
+                            Console.WriteLine($"Содержимое {path}:");
+                            foreach (var file in Directory.GetFiles(path))
+                            {
+                                Console.WriteLine($">[ФАЙЛ]   {Path.GetFileName(file)}");
+                            }
+                            foreach (var dir in Directory.GetDirectories(path))
+                            {
+                                Console.WriteLine($">[ПАПКА]  {Path.GetFileName(dir)}");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Папка '{path}' не найдена");
+                        }
+                    }
+
+                    if (A[0] == "dir_rf") // рекурсивно обрабатывать запрос
+                    {
+                        string mul(char a, int b) {
+                            string A="";
+                            for (int i = 0; i < b; i++)
+                            {
+                                A += a;
+                            }
+
+                            return A;
+
+                        }
+                        void dir_rf(string? path, int level)
+                        {
+                            int a = 3;
+                            foreach (var file in Directory.GetFiles(path))
+                            {
+                                Console.WriteLine($"{mul('>', level)}{mul(' ', level * a)}[ФАЙЛ]  {Path.GetFileName(file)}");
+                            }
+                            foreach (var dir in Directory.GetDirectories(path))
+                            {
+                                Console.WriteLine($"{mul('>', level)}{mul(' ', level * a)}[ПАПКА] {Path.GetFileName(dir)}");
+                                dir_rf(path + "\\" + Path.GetFileName(dir), level + 1);
+                            }
+                        }
+
+                        is_command = true;
+                        string path = ".";
+                        if (A.Count > 1) path = Rep(sob(A, 2, 2));
+
+                        if (Directory.Exists(path))
+                        {
+                            Console.WriteLine($"Содержимое {path}:");
+                            dir_rf(path, 1);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Папка '{path}' не найдена");
+                        }
+                    }
+
+
+                    if (a == "clear")
+                    {
+                        is_command = true;
+                        Console.Clear();
+                    }
+
+                    if (a == "help" || a == "?" || a == "info")
+                    {
+                        is_command = true;
+                        Console.WriteLine("=== СПРАВКА ===");
+                        Console.WriteLine("Основные команды:");
+                        Console.WriteLine("  print <текст>            - вывод с переносом строки");
+                        Console.WriteLine("  echo <текст>             - вывод без переноса");
+                        Console.WriteLine("  str <имя> <значение>     - строковая переменная");
+                        Console.WriteLine("  int <имя> <значение>     - числовая переменная");
+                        Console.WriteLine("  add <имя> <значение>     - прибавить к переменной");
+                        Console.WriteLine("  vars                     - список всех переменных");
+                        Console.WriteLine("  del_var <имя>            - удалить переменную");
+
+                        Console.WriteLine("\nЦвета:");
+                        Console.WriteLine("  color reset              - сброс цвета");
+                        Console.WriteLine("  color <цвет>             - white, black, blue, green, red");
+                        Console.WriteLine("  color rgb <r> <g> <b>    - RGB цвет");
+
+                        Console.WriteLine("\nФайлы и папки:");
+                        Console.WriteLine("  dir [путь]               - содержимое папки");
+                        Console.WriteLine("  dir_rf [путь]            - рекурсивный обход");
+                        Console.WriteLine("  exists <путь>            - проверить существование");
+                        Console.WriteLine("  read <файл>              - прочитать файл");
+                        Console.WriteLine("  write <файл> <текст>     - записать в файл");
+                        Console.WriteLine("  create <файл>            - создать файл");
+                        Console.WriteLine("  del <файл>               - удалить файл");
+                        Console.WriteLine("  open <файл>              - открыть файл");
+
+                        Console.WriteLine("\nЭкранизация:");
+                        Console.WriteLine("  \\0                       - пустое значение");
+                        Console.WriteLine("  \\n                       - следующая строка");
+                        Console.WriteLine("  \\s                       - пробел");
+                        Console.WriteLine("  \\`                       - слеш (\\)");
+                        Console.WriteLine("  \\*                       - начать/закончить многострочный ввод");
+                        Console.WriteLine("  \\[                       - {");
+                        Console.WriteLine("  \\]                       - }");
+                        Console.WriteLine("  \\u0m                     - вернуть цвет к нормальному");
+                        Console.WriteLine("  \\uR.G.Bm                 - задать цвет формата RGB");
+
+                        Console.WriteLine("\nПрочее:");
+                        Console.WriteLine("  \\1ar                    - очистить экран");
+                        Console.WriteLine("  history                  - история команд");
+                        Console.WriteLine("  exit                     - выход");
+                        Console.WriteLine("=== КОНЕЦ СПРАВКИ ===");
+                    }
+
+
+                    if (is_command)
+                    {
+                        History.Add(a);
+                    }
                 }
-
-
-                if (a == "clear")
+                catch (Exception ex)
                 {
-                    is_command = true;
-                    Console.Clear();
+                    // чтоб при ошибке программа не вылетала а продолжала работать
+                    Console.WriteLine(red+"Вызвана ошибка"+ select_color);
                 }
-
-                if (is_command)
-                {
-                    History.Add(a);
-                }
-
             }
 
 
