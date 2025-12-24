@@ -33,12 +33,108 @@ namespace Console2
         }
     }
 
+    class list_cl
+    {
+        public string name;
+        public string value; // плюсы stringово хранить список: любой тип данных хранить будет; минус: больше весить будет
+                             // формат хранения:
+                             // [type val, type val, type val, type val], например: [int 10, int 5, str слово]
+                             // списки в списках:
+                             // [list [int 5, str букашка, list [str картошка, str еще\_что-то]], list [str автобус, int 5], str камаз]
+        static public char[] chars = { ' ', '[', ']', ','};
+        static public char[] chars2 = {' ', '\0', ','};
+        List<string> list;
+
+
+
+        public list_cl(string name, string val)
+        {
+            this.name = name;
+            this.value = Rep_in(val);
+            list = Parser();
+
+        }
+
+        private List<string> Parser() {
+            List<string> A2 = new List<string>();
+            bool flag = false; string new_add = "";
+            int level = 0;
+
+            foreach (char s2 in value)
+            {
+                if (s2 == '[') level++;
+
+                if (chars.Contains(s2) && level == 1) // 1 т. к. мы уже в []
+                {
+                    flag = !flag; if (new_add != "") A2.Add(new_add); new_add = ""; if (!chars2.Contains(s2)) { A2.Add(s2.ToString()); };
+                }
+                else
+                {
+                    new_add += s2;
+                }
+
+                if (s2 == ']') level--;
+
+            }
+
+            if(new_add != "") A2.Add(new_add);
+
+            return A2;
+
+        }
+        private string Rep_in(string x)
+        {
+            return x.Replace("{", "\\[").Replace("}", "\\]")
+                .Replace("\\[", "\\\\(").Replace("\\]", "\\\\)")
+                ;
+
+        }
+        private string Rep_out(string x) { 
+            return x.Replace("\\.", ",")
+                .Replace("\\(", "[").Replace("\\)", "]")
+                .Replace("\\[", "{").Replace("\\]", "}")
+                .Replace("\\n", "\n")
+                .Replace("\\_", " ")
+                .Replace("\\;", ":")
+                .Replace("\\0", "")
+                .Replace("\\`", "\\")
+                ;
+        
+        }
+
+        public string find_i(int i) {
+            string type = "", val = "";
+            //Console.WriteLine($"'{this.value}'");
+            //foreach (string s in list) { Console.WriteLine("'" + s + "'" + "\n"); } // тесты закончены, парсер работает четко
+            int n = -1;
+            foreach (string s in list) {
+                n++; // самый первый символ - [, нет смысла рассматривать
+
+                if ((n + 1) / 2 == i + 1) { //значится нашли
+                    if ((n - 1) % 2 == 0)
+                    {
+                        // это тип данных
+                        type = s;
+                    }
+                    else if ((n - 1) % 2 == 1) {
+                        // это значение
+                        val = s;
+                    }
+                }
+            }
+
+            return type + " " + val;
+        }
+    }
+
 
     internal class Program
     {
         static public List<str_cl> Var_str = new List<str_cl>();
         static public List<int_cl> Var_int = new List<int_cl>();
-        static public char[] chars = {'{', '}', ' ', '(', ')'};
+        static public List<list_cl> Var_list= new List<list_cl>();
+
+        static public char[] chars = {'{', '}', ' ', '[', ']'};
         static public char[] chars2 = { '{', '}' };
 
         static string string_(List <string>? h, string a) {
@@ -79,9 +175,8 @@ namespace Console2
 
 
 
-            X = x.Replace("\\n", "\n") // \n - аналогично enter
-
-            ; // по идеи этого достаточно для полноценной системы
+            X = x.Replace("\\*", "");
+            
 
             return X;
         }
@@ -93,11 +188,14 @@ namespace Console2
 
 
             X = x.Replace("\\n", "\n") // \n - аналогично enter
-                .Replace("\\s", " ") // это важно, т. к. в моменте идет разделение пробелом
+                .Replace("\\_", " ") // это важно, т. к. в моменте идет разделение пробелом
                 .Replace("\\0", "") // иногда это важно и можно сказать спасает
                 .Replace("\\*", "")
-                .Replace("\\[", "{").Replace("\\]", "}"); // для фигурных 
-
+                .Replace("\\;", ":") // иногда это важно т. к. : нужно будет
+                .Replace("\\.", ",") // иногда это важно т. к. , нужно будет
+                .Replace("\\(", "[").Replace("\\)", "]") // для квадратных 
+                .Replace("\\[", "{").Replace("\\]", "}")  // для фигурных 
+                ;
             X = X.Replace("\\`", "\\") // это обязательно делать в конец
 
             ; // по идеи этого достаточно для полноценной системы
@@ -143,6 +241,14 @@ namespace Console2
                 }
             }
 
+            for (int i = 0; i < Var_list.Count; i++)
+            {
+                if (Var_list[i].name == a)
+                {
+                    A = Var_list[i].value; break;
+                }
+            }
+
             return A;
         }
         static bool inA(List<string> A, string n) { 
@@ -182,6 +288,13 @@ namespace Console2
                     flag = "int";
                 }
             }
+            foreach (var i in Var_list)
+            {
+                if (i.name == n)
+                {
+                    flag = "list";
+                }
+            }
 
             return flag;
         }
@@ -202,6 +315,16 @@ namespace Console2
             }
             n2 = 0;
             foreach (var i in Var_int)
+            {
+                if (i.name == n)
+                {
+                    num = n2;
+                }
+
+                n2++;
+            }
+            n2 = 0;
+            foreach (var i in Var_list)
             {
                 if (i.name == n)
                 {
@@ -253,6 +376,34 @@ namespace Console2
             }
             return a;
         }
+        static string _sob2(List<string> A, int j)
+        {
+            string a = "";
+            bool flag = false;
+            for (int i = j; i < A.Count(); i++)
+            {
+                if (A[i] == "{")
+                {
+                    flag = true;
+                }
+                if (!flag)
+                {
+                    a += A[i];
+                }
+                else
+                {
+                    if (i != A.Count() - 1)
+                        a += find(A[i]) + " ";
+                    else
+                        a += find(A[i]);
+                }
+                if (A[i] == "}")
+                {
+                    flag = false;
+                }
+            }
+            return a;
+        }
 
         static string sob_not_space(List<string> A, int j)
         {
@@ -270,7 +421,7 @@ namespace Console2
                 }
                 else
                 {
-                    a += find(A[i]).Replace(" ", "\\s");
+                    a += find(A[i]).Replace(" ", "\\_");
                 }
                 if (A[i] == "}")
                 {
@@ -367,6 +518,12 @@ namespace Console2
                         Console.WriteLine(Rep(ColorRep(sob(A, 2))));
                     }
 
+                    if (A[0] == "printf") // что и обычный print но без экранизации, только многострочный режим
+                    {
+                        is_command = true;
+                        Console.WriteLine(Rep_not_space(ColorRep(sob(A, 2))));
+                    }
+
                     if (A[0] == "echo")
                     {
                         is_command = true;
@@ -414,6 +571,18 @@ namespace Console2
                                 Var_int[n] = new int_cl(A[4], val);
                             }
                         }
+
+                        if (A[2] == "list")
+                        {
+                            var val = Rep_not_space(sob(A, 6)); // в листе Rep не нужен, он сам там все будет делать у себя
+                            if (!inA(A, A[4]))
+                                Var_list.Add(new list_cl(A[4], val));
+                            else
+                            {
+                                n = findA(A, A[4]);
+                                Var_list[n] = new list_cl(A[4], val);
+                            }
+                        }
                     }
 
                     if (true)
@@ -444,6 +613,54 @@ namespace Console2
                                 Var_int[n] = new int_cl(A[2], val);
                             }
                         }
+                        if (A[0] == "list")
+                        {
+                            is_command = true;
+
+                            string val = Rep_not_space(sob(A, 4)); // в листе Rep не нужен, он сам там все будет делать у себя
+                            if (!inA(A, A[2]))
+                                Var_list.Add(new list_cl(A[2], val));
+                            else
+                            {
+                                n = findA(A, A[2]);
+                                Var_list[n] = new list_cl(A[2], val);
+                            }
+                        }
+                    }
+
+                    if (A[0] == "element") // element name index list - элемент с каким-то индексом
+                                           // element list index is val - задать элемент списка каким-то
+                        //тип данных писать не надо, т. к. он опредлится автоматически
+                    {
+                        is_command = true;
+
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob2(A, 0))).Split(" "));
+                        var reg = new List<string>();
+                        foreach (string i in reg2)
+                        {
+                            reg.Add(Rep_not_space(i)); Console.WriteLine(Rep_not_space(i));
+                        }
+
+                        var A2 = reg;
+                        if (A2[3] != "is")
+                        {
+                            list_cl list = new list_cl(A2[1], Rep_not_space(_sob2(A2, 3)));
+                            Console.WriteLine(_sob2(A2, 3));
+                            var val2 = new List<string>(list.find_i(int.Parse(A2[2])).Split(" "));
+                            Console.WriteLine(list.find_i(int.Parse(A2[2])));
+                            string type = val2[0];
+                            string val = sob2(val2, 1);
+                            if (type == "str")
+                            {
+                                if (!inA(A2, A2[1]))
+                                    Var_str.Add(new str_cl(A2[1], val));
+                                else
+                                {
+                                    n = findA(A, A[1]);
+                                    Var_str[n] = new str_cl(A2[1], val);
+                                }
+                            }
+                        }
                     }
 
                     if (A[0] == "del_var" && A.Count > 1)
@@ -466,6 +683,15 @@ namespace Console2
                             if (Var_int[i].name == varName)
                             {
                                 Var_int.RemoveAt(i);
+                            }
+                        }
+
+                        // Удалить из Var_list
+                        for (int i = Var_list.Count - 1; i >= 0; i--)
+                        {
+                            if (Var_list[i].name == varName)
+                            {
+                                Var_list.RemoveAt(i);
                             }
                         }
                     }
@@ -981,7 +1207,7 @@ namespace Console2
                         Console.WriteLine("\nЭкранизация:");
                         Console.WriteLine("  \\0                       - пустое значение");
                         Console.WriteLine("  \\n                       - следующая строка");
-                        Console.WriteLine("  \\s                       - пробел");
+                        Console.WriteLine("  \\_                       - пробел");
                         Console.WriteLine("  \\`                       - слеш (\\)");
                         Console.WriteLine("  \\*                       - начать/закончить многострочный ввод");
                         Console.WriteLine("  \\[                       - {");
@@ -990,7 +1216,7 @@ namespace Console2
                         Console.WriteLine("  \\uR.G.Bm                 - задать цвет формата RGB");
 
                         Console.WriteLine("\nПрочее:");
-                        Console.WriteLine("  \\1ar                    - очистить экран");
+                        Console.WriteLine("  clear                    - очистить экран");
                         Console.WriteLine("  history                  - история команд");
                         Console.WriteLine("  exit                     - выход");
                         Console.WriteLine("=== КОНЕЦ СПРАВКИ ===");
