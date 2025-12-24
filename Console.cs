@@ -118,7 +118,7 @@ namespace Console2
                     }
                     else if ((n - 1) % 2 == 1) {
                         // это значение
-                        val = s;
+                        val = Rep_out(s);
                     }
                 }
             }
@@ -260,6 +260,13 @@ namespace Console2
                 }
             }
             foreach (var i in Var_int)
+            {
+                if (i.name == n)
+                {
+                    flag = true;
+                }
+            }
+            foreach (var i in Var_list)
             {
                 if (i.name == n)
                 {
@@ -632,32 +639,50 @@ namespace Console2
                                            // element list index is val - задать элемент списка каким-то
                         //тип данных писать не надо, т. к. он опредлится автоматически
                     {
-                        is_command = true;
+                        is_command = true; int k = 2;
 
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob2(A, 0))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob(A, 0))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
-                            reg.Add(Rep_not_space(i)); Console.WriteLine(Rep_not_space(i));
+                            reg.Add(Rep_not_space(i)); reg.Add(" ");
                         }
 
                         var A2 = reg;
-                        if (A2[3] != "is")
+                        if (A2[3 * k] != "is")
                         {
-                            list_cl list = new list_cl(A2[1], Rep_not_space(_sob2(A2, 3)));
-                            Console.WriteLine(_sob2(A2, 3));
-                            var val2 = new List<string>(list.find_i(int.Parse(A2[2])).Split(" "));
-                            Console.WriteLine(list.find_i(int.Parse(A2[2])));
+                            list_cl list = new list_cl(A2[1 * k], Rep_not_space(sob(A2, 3 * k)));
+                            var val2 = new List<string>(list.find_i(int.Parse(A2[2 * k])).Split(" "));
                             string type = val2[0];
                             string val = sob2(val2, 1);
                             if (type == "str")
                             {
-                                if (!inA(A2, A2[1]))
-                                    Var_str.Add(new str_cl(A2[1], val));
+                                if (!inA(A2, A2[1 * k]))
+                                    Var_str.Add(new str_cl(A2[1 * k], val));
                                 else
                                 {
                                     n = findA(A, A[1]);
-                                    Var_str[n] = new str_cl(A2[1], val);
+                                    Var_str[n] = new str_cl(A2[1 * k], val);
+                                }
+                            }
+                            if (type == "int")
+                            {
+                                if (!inA(A2, A2[1 * k]))
+                                    Var_int.Add(new int_cl(A2[1 * k], int.Parse(val)));
+                                else
+                                {
+                                    n = findA(A, A[1]);
+                                    Var_int[n] = new int_cl(A2[1 * k], int.Parse(val));
+                                }
+                            }
+                            if (type == "list")
+                            {
+                                if (!inA(A2, A2[1 * k]))
+                                    Var_list.Add(new list_cl(A2[1 * k], val));
+                                else
+                                {
+                                    n = findA(A, A[1]);
+                                    Var_list[n] = new list_cl(A2[1 * k], val);
                                 }
                             }
                         }
