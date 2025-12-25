@@ -90,12 +90,14 @@ namespace Console2
 
         }
         private string Rep_out(string x) { 
-            return x.Replace("\\.", ",")
+            return x
                 .Replace("\\(", "[").Replace("\\)", "]")
                 .Replace("\\[", "{").Replace("\\]", "}")
                 .Replace("\\n", "\n")
+                .Replace("\\t", "\t")
                 .Replace("\\_", " ")
                 .Replace("\\;", ":")
+                .Replace("\\.", ",")
                 .Replace("\\0", "")
                 .Replace("\\`", "\\")
                 ;
@@ -193,6 +195,7 @@ namespace Console2
                 .Replace("\\*", "")
                 .Replace("\\;", ":") // иногда это важно т. к. : нужно будет
                 .Replace("\\.", ",") // иногда это важно т. к. , нужно будет
+                .Replace("\\t", "\t") // табы
                 .Replace("\\(", "[").Replace("\\)", "]") // для квадратных 
                 .Replace("\\[", "{").Replace("\\]", "}")  // для фигурных 
                 ;
@@ -201,6 +204,24 @@ namespace Console2
             ; // по идеи этого достаточно для полноценной системы
 
             return X;
+        }
+
+        static string Rep_in(string x)
+        {
+            string X;
+            if (x != "")
+                X = x.Replace("{", "\\[").Replace("}", "\\]")
+               .Replace("\\[", "\\\\(").Replace("\\]", "\\\\)")
+               .Replace(" ", "\\_")
+               .Replace(",", "\\.")
+               .Replace(":", ";") // это надо для того чтоб в список нормально загружалось
+               ;
+            else {
+                X = "\\0";
+            }
+
+                return X;
+
         }
 
         static List<string> Parse(string a) { 
@@ -383,7 +404,7 @@ namespace Console2
             }
             return a;
         }
-        static string _sob2(List<string> A, int j)
+        static string _sob(List<string> A, int j)
         {
             string a = "";
             bool flag = false;
@@ -399,10 +420,8 @@ namespace Console2
                 }
                 else
                 {
-                    if (i != A.Count() - 1)
-                        a += find(A[i]) + " ";
-                    else
-                        a += find(A[i]);
+                        a += Rep_in(find(A[i]));
+                    
                 }
                 if (A[i] == "}")
                 {
@@ -550,6 +569,11 @@ namespace Console2
                         {
                             Console.WriteLine($"  {v.name} = {v.value}");
                         }
+                        Console.WriteLine("Списковые переменные:");
+                        foreach (var v in Var_list)
+                        {
+                            Console.WriteLine($"  {v.name} = {v.value}");
+                        }
                     }
 
                     if (A[0] == "set") // set(0) (1) int(2) (3) name(4)  (5) val(6)
@@ -558,7 +582,7 @@ namespace Console2
 
                         if (A[2] == "str")
                         {
-                            string val = Rep(sob(A, 6));
+                            string val = Rep(_sob(A, 6));
                             if (!inA(A, A[4]))
                                 Var_str.Add(new str_cl(A[4], val));
                             else
@@ -569,7 +593,7 @@ namespace Console2
                         }
                         if (A[2] == "int")
                         {
-                            int val = int.Parse(Rep(sob(A, 6)));
+                            int val = int.Parse(Rep(_sob(A, 6)));
                             if (!inA(A, A[4]))
                                 Var_int.Add(new int_cl(A[4], val));
                             else
@@ -598,7 +622,7 @@ namespace Console2
                         {
                             is_command = true;
 
-                            string val = Rep(sob(A, 4));
+                            string val = Rep(_sob(A, 4));
                             if (!inA(A, A[2]))
                                 Var_str.Add(new str_cl(A[2], val));
                             else
@@ -611,7 +635,7 @@ namespace Console2
                         {
                             is_command = true;
 
-                            int val = int.Parse(Rep(sob(A, 4)));
+                            int val = int.Parse(Rep(_sob(A, 4)));
                             if (!inA(A, A[2]))
                                 Var_int.Add(new int_cl(A[2], val));
                             else
@@ -907,7 +931,7 @@ namespace Console2
 
                     if (A[0] == "write")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -927,7 +951,7 @@ namespace Console2
 
                     if (A[0] == "append")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -999,7 +1023,7 @@ namespace Console2
 
                     if (A[0] == "read_var")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -1041,7 +1065,7 @@ namespace Console2
 
                     if (A[0] == "create")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -1059,7 +1083,7 @@ namespace Console2
 
                     if (A[0] == "create_rep") // создать папку 
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -1076,7 +1100,7 @@ namespace Console2
 
                     if (A[0] == "open")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -1113,7 +1137,7 @@ namespace Console2
 
                     if (A[0] == "exists")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -1256,7 +1280,7 @@ namespace Console2
                 catch (Exception ex)
                 {
                     // чтоб при ошибке программа не вылетала а продолжала работать
-                    Console.WriteLine(red+"Вызвана ошибка"+ select_color);
+                    Console.WriteLine(red+"Вызвана ошибка" + select_color);
                 }
             }
 
