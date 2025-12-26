@@ -582,7 +582,7 @@ namespace Console2
 
                         if (A[2] == "str")
                         {
-                            string val = Rep(_sob(A, 6));
+                            string val = Rep(sob(A, 6));
                             if (!inA(A, A[4]))
                                 Var_str.Add(new str_cl(A[4], val));
                             else
@@ -593,7 +593,7 @@ namespace Console2
                         }
                         if (A[2] == "int")
                         {
-                            int val = int.Parse(Rep(_sob(A, 6)));
+                            int val = int.Parse(Rep(sob(A, 6)));
                             if (!inA(A, A[4]))
                                 Var_int.Add(new int_cl(A[4], val));
                             else
@@ -622,7 +622,7 @@ namespace Console2
                         {
                             is_command = true;
 
-                            string val = Rep(_sob(A, 4));
+                            string val = Rep(sob(A, 4));
                             if (!inA(A, A[2]))
                                 Var_str.Add(new str_cl(A[2], val));
                             else
@@ -635,7 +635,7 @@ namespace Console2
                         {
                             is_command = true;
 
-                            int val = int.Parse(Rep(_sob(A, 4)));
+                            int val = int.Parse(Rep(sob(A, 4)));
                             if (!inA(A, A[2]))
                                 Var_int.Add(new int_cl(A[2], val));
                             else
@@ -931,7 +931,7 @@ namespace Console2
 
                     if (A[0] == "write")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -951,7 +951,7 @@ namespace Console2
 
                     if (A[0] == "append")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -1023,7 +1023,7 @@ namespace Console2
 
                     if (A[0] == "read_var")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -1065,7 +1065,7 @@ namespace Console2
 
                     if (A[0] == "create")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -1083,7 +1083,7 @@ namespace Console2
 
                     if (A[0] == "create_rep") // создать папку 
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -1100,7 +1100,7 @@ namespace Console2
 
                     if (A[0] == "open")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
@@ -1137,7 +1137,7 @@ namespace Console2
 
                     if (A[0] == "exists")
                     {
-                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(_sob(A, 2))).Split(" "));
+                        List<string> reg2 = new List<string>(Rep_not_space(ColorRep(sob_not_space(A, 2))).Split(" "));
                         var reg = new List<string>();
                         foreach (string i in reg2)
                         {
