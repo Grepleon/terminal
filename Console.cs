@@ -3,6 +3,7 @@ using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.JavaScript;
 using System.Security.Cryptography.X509Certificates;
@@ -31,6 +32,18 @@ namespace Console2
         public int value;
 
         public int_cl(string name, int val)
+        {
+            this.name = name;
+            this.value = val;
+        }
+    }
+
+    class drob_cl
+    {
+        public string name;
+        public double value;
+
+        public drob_cl(string name, double val)
         {
             this.name = name;
             this.value = val;
@@ -156,9 +169,10 @@ namespace Consolesoft
 
         static public List <string> history      = new List <string> ();
 
-        static public List<str_cl>  Var_str      = new List<str_cl>();
-        static public List<int_cl>  Var_int      = new List<int_cl>();
-        static public List<list_cl> Var_list     = new List<list_cl>();
+        static public List<str_cl>  Var_str      = new List<str_cl>  ();
+        static public List<int_cl>  Var_int      = new List<int_cl>  ();
+        static public List<drob_cl> Var_drob     = new List<drob_cl> ();
+        static public List<list_cl> Var_list     = new List<list_cl> ();
 
         static public char[] chars               = { '{', '}', ' ', '[', ']' };
         static public char[] chars2              = { '{', '}' };
@@ -232,6 +246,14 @@ namespace Consolesoft
                 }
             }
 
+            for (int i = 0; i < Var_drob.Count; i++)
+            {
+                if (Var_drob[i].name == a)
+                {
+                    A = Var_drob[i].value.ToString(); break;
+                }
+            }
+
             for (int i = 0; i < Var_list.Count; i++)
             {
                 if (Var_list[i].name == a)
@@ -254,6 +276,13 @@ namespace Consolesoft
                 }
             }
             foreach (var i in Var_int)
+            {
+                if (i.name == n)
+                {
+                    flag = true;
+                }
+            }
+            foreach (var i in Var_drob)
             {
                 if (i.name == n)
                 {
@@ -289,6 +318,13 @@ namespace Consolesoft
                     flag = "int";
                 }
             }
+            foreach (var i in Var_drob)
+            {
+                if (i.name == n)
+                {
+                    flag = "drob";
+                }
+            }
             foreach (var i in Var_list)
             {
                 if (i.name == n)
@@ -316,6 +352,16 @@ namespace Consolesoft
             }
             n2 = 0;
             foreach (var i in Var_int)
+            {
+                if (i.name == n)
+                {
+                    num = n2;
+                }
+
+                n2++;
+            }
+            n2 = 0;
+            foreach (var i in Var_drob)
             {
                 if (i.name == n)
                 {
@@ -368,6 +414,9 @@ namespace Consolesoft
             string new_val = val
                 .Replace("\\n", "\n")
                 .Replace("\\t", "\t")
+                .Replace("\\_", " ")
+                .Replace("\\;", ":")
+                .Replace("\\.", ",")
                 .Replace("\\(", "[")
                 .Replace("\\)", "]")
                 .Replace("\\[", "{")
@@ -377,6 +426,20 @@ namespace Consolesoft
                 .Replace("\\`", "\\")
                 ;
             return new_val;
+        }
+
+        static string Rep_in(string x)
+        {
+            if (string.IsNullOrEmpty(x)) return "\\0";
+
+            return x
+                .Replace("{", "\\[")
+                .Replace("}", "\\]")
+                .Replace("\\[", "\\\\(")
+                .Replace("\\]", "\\\\)")
+                .Replace(" ", "\\_")
+                .Replace(",", "\\.")
+                .Replace(":", "\\;");
         }
 
         static string Rep_outf(string val)
@@ -437,6 +500,30 @@ namespace Consolesoft
             Console.Write(Rep_color(Rep_out(collected_value)));
         }
 
+        static void str_var_create(List<string> list, int k)
+        { 
+            string name = list[k];
+            string val = Rep_in(Collect(list, k + 2));
+
+            Var_str.Add(new str_cl(name, val));
+        }
+
+        static void int_var_create(List<string> list, int k)
+        {
+            string name = list[k];
+            int val = int.Parse(Collect(list, k + 2));
+
+            Var_int.Add(new int_cl(name, val));
+        }
+
+        static void set_var(List<string> list)
+        {
+            if (list[2] == "str")
+                str_var_create(list, 4);
+            if (list[2] == "int")
+                int_var_create(list, 4);
+        }
+
         static void Out(List<string> A) {
             /*Вывод по командам*/
             bool flag = true;
@@ -460,6 +547,18 @@ namespace Consolesoft
 
                 case "echo": // вывод без экранизации (только без многострочного режима)
                     echo(A);
+                    break;
+
+                case "set":
+                    set_var(A);
+                    break;
+
+                case "str":
+                    str_var_create(A, 2);
+                    break;
+
+                case "int":
+                    int_var_create(A, 2);
                     break;
 
                 default:
