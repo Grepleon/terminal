@@ -2,6 +2,7 @@ using Console2;
 using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -84,7 +85,7 @@ namespace Console2
 
                 if (chars.Contains(s2) && level == 1) // 1 т. к. мы уже в []
                 {
-                    flag = !flag; if (new_add != "") A2.Add(new_add); new_add = ""; if (!chars2.Contains(s2)) { A2.Add(s2.ToString()); }
+                    flag = !flag; if (new_add != "") A2.Add(new_add); new_add = ""; if (!chars2.Contains(s2)) { A2.Add(s2.ToString(CultureInfo.InvariantCulture)); }
                     ;
                 }
                 else
@@ -188,7 +189,7 @@ namespace Consolesoft
 
                 if (chars.Contains(s2))
                 {
-                    flag = !flag; A2.Add(new_add); new_add = ""; A2.Add(s2.ToString());
+                    flag = !flag; A2.Add(new_add); new_add = ""; A2.Add(s2.ToString(CultureInfo.InvariantCulture));
                 }
                 else
                 {
@@ -242,7 +243,7 @@ namespace Consolesoft
             {
                 if (Var_int[i].name == a)
                 {
-                    A = Var_int[i].value.ToString(); break;
+                    A = Var_int[i].value.ToString(CultureInfo.InvariantCulture); break;
                 }
             }
 
@@ -250,7 +251,7 @@ namespace Consolesoft
             {
                 if (Var_drob[i].name == a)
                 {
-                    A = Var_drob[i].value.ToString(); break;
+                    A = Var_drob[i].value.ToString(CultureInfo.InvariantCulture); break;
                 }
             }
 
@@ -264,7 +265,7 @@ namespace Consolesoft
 
             return A;
         }
-        static bool inA(List<string> A, string n)
+        static bool exists(string n)
         {
             bool flag = false;
 
@@ -300,7 +301,7 @@ namespace Consolesoft
             return flag;
         }
 
-        static string inO(List<string> A, string n)
+        static string type(string n)
         {
             string flag = "none";
 
@@ -336,7 +337,7 @@ namespace Consolesoft
             return flag;
         }
 
-        static int findA(List<string> A, string n)
+        static int number(string n)
         {
             int num = 0;
 
@@ -474,6 +475,15 @@ namespace Consolesoft
             return result;
         }
 
+        static double to_drob(string n) { 
+            double a = double.Parse(n.Replace(",", "."), CultureInfo.InvariantCulture);
+            return a;
+        }
+
+        static void ShowError(string error) {
+            Console.WriteLine(red + error + select_color);
+        }
+
         static void exit_fun() {
             flag_exit = true;
         }
@@ -503,17 +513,45 @@ namespace Consolesoft
         static void str_var_create(List<string> list, int k)
         { 
             string name = list[k];
-            string val = Rep_in(Collect(list, k + 2));
+            string val  = Rep_in(Collect(list, k + 2));
+            int    num  = -1;
 
-            Var_str.Add(new str_cl(name, val));
+            if (!exists(name))
+                Var_str.Add(new str_cl(name, val));
+            else{
+                num = number(name);
+                Var_str[num] = new str_cl(name, val);
+            }
         }
 
         static void int_var_create(List<string> list, int k)
         {
             string name = list[k];
             int val = int.Parse(Collect(list, k + 2));
+            int num = -1;
 
-            Var_int.Add(new int_cl(name, val));
+            if (!exists(name))
+                Var_int.Add(new int_cl(name, val));
+            else
+            {
+                num = number(name);
+                Var_int[num] = new int_cl(name, val);
+            }
+        }
+
+        static void drob_var_create(List<string> list, int k)
+        {
+            string name = list[k];
+            double val = to_drob(Collect(list, k + 2));
+            int num = -1;
+
+            if (!exists(name))
+                Var_drob.Add(new drob_cl(name, val));
+            else
+            {
+                num = number(name);
+                Var_drob[num] = new drob_cl(name, val);
+            }
         }
 
         static void set_var(List<string> list)
@@ -522,6 +560,144 @@ namespace Consolesoft
                 str_var_create(list, 4);
             if (list[2] == "int")
                 int_var_create(list, 4);
+            if (list[2] == "drob") 
+                drob_var_create(list, 4);
+        }
+
+        static void add_vars(List<string> list)
+        {
+            string reg  = Rep_outf(Collect(list, 4));
+
+            string name = list[2];
+            string t    = type(name);
+            int    num  = number(name);
+
+            if (t == "int") {
+                Var_int[num].value += int.Parse(reg);
+            }
+            if (t == "drob"){
+                Var_drob[num].value += to_drob(reg);
+            }
+            if (t == "str"){
+                Var_str[num].value += reg;
+            }
+        }
+
+        static void sub_vars(List<string> list)
+        {
+            string reg = Rep_outf(Collect(list, 4));
+
+            string name = list[2];
+            string t    = type(name);
+            int    num  = number(name);
+
+            if (t == "int")
+            {
+                Var_int[num].value -= int.Parse(reg);
+            }
+            if (t == "drob")
+            {
+                Var_drob[num].value -= to_drob(reg);
+            }
+        }
+
+        static void multy_vars(List<string> list)
+        {
+            string reg = Rep_outf(Collect(list, 4));
+
+            string name = list[2];
+            string t    = type(name);
+            int    num  = number(name);
+
+            if (t == "int"){
+                Var_int[num].value *= int.Parse(reg);
+            }
+            if (t == "drob")
+            {
+                Var_drob[num].value *= to_drob(reg);
+            }
+            if (t == "str"){
+                string val = Var_str[num].value;
+                Var_str[num].value = "";
+                for (int i = 0; i < int.Parse(reg); i++) Var_str[num].value += val;
+
+                if (Var_str[num].value == "") { Var_str[num].value = "\\0"; } // просто ничего хранить нельзя
+            }
+        }
+
+        static int div_vars(List<string> list)
+        {
+            string reg = Rep_outf(Collect(list, 4));
+
+            string name = list[2];
+            string t = type(name);
+            int num = number(name);
+
+            if (t == "int")
+            {
+                if (int.Parse(reg) == 0) { ShowError("Деление на 0 невозможно"); return 0; }
+
+                Var_int[num].value /= int.Parse(reg);
+            }
+            if (t == "drob")
+            {
+                if (to_drob(reg) == 0) { ShowError("Деление на 0 невозможно"); return 0; }
+
+                Var_drob[num].value /= to_drob(reg);
+            }
+
+            return 1;
+        }
+
+        static void pow_vars(List<string> list)
+        {
+            string reg = Rep_outf(Collect(list, 4));
+
+            string name = list[2];
+            string t = type(name);
+            int num = number(name);
+
+            if (t == "int")
+            {
+                Var_int[num].value = (int)Math.Pow(Var_int[num].value, int.Parse(reg));
+            }
+            if (t == "drob")
+            {
+                Var_drob[num].value = Math.Pow(Var_drob[num].value, to_drob(reg));
+            }
+
+        }
+
+        static int mod_vars(List<string> list)
+        {
+            string reg = Rep_outf(Collect(list, 4));
+
+            string name = list[2];
+            string t = type(name);
+            int num = number(name);
+
+            if (t == "int")
+            {
+                int divisor = int.Parse(reg);
+
+                if (divisor == 0) { ShowError("Деление на 0 невозможно"); return 0; }
+
+                int result = Var_int[num].value % divisor;
+                // Делаем результат неотрицательным
+                if (result < 0) result += divisor;
+                Var_int[num].value = result;
+            }
+
+            if (t == "drob")
+            {
+                double divisor = to_drob(reg);
+                if (divisor == 0) { ShowError("Деление на 0 невозможно"); return 0; }
+
+                // Для дробных: fmod (остаток от деления)
+                Var_drob[num].value = Var_drob[num].value % divisor;
+            }
+
+            return 1;
         }
 
         static void Out(List<string> A) {
@@ -561,6 +737,34 @@ namespace Consolesoft
                     int_var_create(A, 2);
                     break;
 
+                case "drob":
+                    drob_var_create(A, 2);
+                    break;
+
+                case "add": // сложить
+                    add_vars(A);
+                    break;
+
+                case "sub": // вычесть
+                    sub_vars(A);
+                    break;
+
+                case "multy": // умножить
+                    multy_vars(A);
+                    break;
+
+                case "div": // разделить
+                    div_vars(A);
+                    break;
+
+                case "pow": // возвести в степень
+                    pow_vars(A);
+                    break;
+
+                case "mod": // остаток от деления
+                    mod_vars(A);
+                    break;
+
                 default:
                     flag = false;
                     break;
@@ -573,6 +777,8 @@ namespace Consolesoft
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
 
             Console.WriteLine("Console\r\n(c) Корпорация Consolesoft (Consolesoft Corporation). Не все права защищены.");
             List<string>? A          = new List<string>();
