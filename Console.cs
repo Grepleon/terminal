@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.JavaScript;
 using System.Security.Cryptography.X509Certificates;
@@ -200,6 +201,16 @@ namespace Consolesoft
             A2.Add(new_add);
 
             return A2;
+        }
+
+        static List<string> Parse_var(List<string> A) {
+            List<string> reg2 = new List<string>(Collect_ns(A, 2).Split(" "));
+            var reg = new List<string>();
+            foreach (string i in reg2)
+            {
+                reg.Add(Rep_out(i));
+            }
+            return reg;
         }
 
         static List<string> Input() {
@@ -411,6 +422,58 @@ namespace Consolesoft
             return a;
         }
 
+        static string Collect(List<string> A, int j, string sep)
+        {
+            string a = "";
+            bool flag = false;
+            for (int i = j; i < A.Count(); i++)
+            {
+                if (A[i] == "{")
+                {
+                    flag = true;
+                }
+                if (!flag)
+                {
+                    a += A[i] + ((i == A.Count - 1) ? "" : sep);
+                }
+                else
+                {
+                    a += find(A[i]);
+                }
+                if (A[i] == "}")
+                {
+                    flag = false;
+                }
+            }
+            return a;
+        }
+
+        static string Collect_ns(List<string> A, int j)
+        {
+            string a = "";
+            bool flag = false;
+            for (int i = j; i < A.Count(); i++)
+            {
+                if (A[i] == "{")
+                {
+                    flag = true;
+                }
+                if (!flag)
+                {
+                    a += A[i];
+                }
+                else
+                {
+                    a += find(A[i]);
+                }
+                if (A[i] == "}")
+                {
+                    flag = false;
+                }
+            }
+            return a;
+        }
+
         static string Rep_out(string val) {
             string new_val = val
                 .Replace("\\n", "\n")
@@ -439,8 +502,27 @@ namespace Consolesoft
                 .Replace("\\[", "\\\\(")
                 .Replace("\\]", "\\\\)")
                 .Replace(" ", "\\_")
+                .Replace("\n", "\\n")
                 .Replace(",", "\\.")
-                .Replace(":", "\\;");
+                .Replace(":", "\\;")
+                ;
+        }
+
+        static string Rep_into(string x)
+        {
+            if (string.IsNullOrEmpty(x)) return "\\0";
+
+            return x
+                .Replace("{", "\\[")
+                .Replace("}", "\\]")
+                .Replace("\\[", "\\\\(")
+                .Replace("\\]", "\\\\)")
+                .Replace(" ", "\\_")
+                .Replace("\n", "\\n")
+                .Replace(",", "\\.")
+                .Replace(":", "\\;")
+                .Replace("\\", "\\`")
+                ;
         }
 
         static string Rep_outf(string val)
@@ -479,6 +561,11 @@ namespace Consolesoft
             double a = double.Parse(n.Replace(",", "."), CultureInfo.InvariantCulture);
             return a;
         }
+        static double to_drob(int n)
+        {
+            double a = n;
+            return a;
+        }
 
         static void ShowError(string error) {
             Console.WriteLine(red + error + select_color);
@@ -510,18 +597,44 @@ namespace Consolesoft
             Console.Write(Rep_color(Rep_out(collected_value)));
         }
 
+        static void CreateVar(string name, string val) {
+            if (!exists(name))
+                Var_str.Add(new str_cl(name, val));
+            else
+            {
+                int num = number(name);
+                Var_str[num] = new str_cl(name, val);
+            }
+        }
+
+        static void CreateVar(string name, int val)
+        {
+            if (!exists(name))
+                Var_int.Add(new int_cl(name, val));
+            else
+            {
+                int num = number(name);
+                Var_int[num] = new int_cl(name, val);
+            }
+        }
+
+        static void CreateVar(string name, double val)
+        {
+            if (!exists(name))
+                Var_drob.Add(new drob_cl(name, val));
+            else
+            {
+                int num = number(name);
+                Var_drob[num] = new drob_cl(name, val);
+            }
+        }
+
         static void str_var_create(List<string> list, int k)
         { 
             string name = list[k];
             string val  = Rep_in(Collect(list, k + 2));
-            int    num  = -1;
 
-            if (!exists(name))
-                Var_str.Add(new str_cl(name, val));
-            else{
-                num = number(name);
-                Var_str[num] = new str_cl(name, val);
-            }
+            CreateVar(name, val);
         }
 
         static void int_var_create(List<string> list, int k)
@@ -530,13 +643,7 @@ namespace Consolesoft
             int val = int.Parse(Collect(list, k + 2));
             int num = -1;
 
-            if (!exists(name))
-                Var_int.Add(new int_cl(name, val));
-            else
-            {
-                num = number(name);
-                Var_int[num] = new int_cl(name, val);
-            }
+            CreateVar(name, val);
         }
 
         static void drob_var_create(List<string> list, int k)
@@ -545,13 +652,7 @@ namespace Consolesoft
             double val = to_drob(Collect(list, k + 2));
             int num = -1;
 
-            if (!exists(name))
-                Var_drob.Add(new drob_cl(name, val));
-            else
-            {
-                num = number(name);
-                Var_drob[num] = new drob_cl(name, val);
-            }
+            CreateVar(name, val);
         }
 
         static void set_var(List<string> list)
@@ -630,8 +731,8 @@ namespace Consolesoft
             string reg = Rep_outf(Collect(list, 4));
 
             string name = list[2];
-            string t = type(name);
-            int num = number(name);
+            string t    = type(name);
+            int    num  = number(name);
 
             if (t == "int")
             {
@@ -654,8 +755,8 @@ namespace Consolesoft
             string reg = Rep_outf(Collect(list, 4));
 
             string name = list[2];
-            string t = type(name);
-            int num = number(name);
+            string t    = type(name);
+            int    num  = number(name);
 
             if (t == "int")
             {
@@ -673,8 +774,8 @@ namespace Consolesoft
             string reg = Rep_outf(Collect(list, 4));
 
             string name = list[2];
-            string t = type(name);
-            int num = number(name);
+            string t   = type(name);
+            int   num  = number(name);
 
             if (t == "int")
             {
@@ -700,11 +801,246 @@ namespace Consolesoft
             return 1;
         }
 
+        static void to_type(List<string> list) {
+            string name     = list[0];
+            string t        = type(name);
+            string type_to  = list[4];
+            int    n        = number(name);
+            
+            if (t == "str")
+            {
+                string value = Var_str[n].value;
+                if (type_to == "int") 
+                {
+                    Var_str.RemoveAt(n);
+                    Var_int.Add(new int_cl(list[0], Convert.ToInt32(value)));
+                }
+                if (type_to == "drob")
+                {
+                    Var_str.RemoveAt(n);
+                    Var_drob.Add(new drob_cl(list[0], to_drob(value)));
+                }
+            }
+            if (t == "int")
+            {
+                int value = Var_int[n].value;
+                if (type_to == "str")
+                {
+                    Var_int.RemoveAt(n);
+                    Var_str.Add(new str_cl(list[0], value.ToString()));
+                }
+                if (type_to == "drob")
+                {
+                    Var_int.RemoveAt(n);
+                    Var_drob.Add(new drob_cl(list[0], to_drob(value)));
+                }
+            }
+            if (t == "drob")
+            {
+                double value = Var_drob[n].value;
+                if (type_to == "str")
+                {
+                    Var_drob.RemoveAt(n);
+                    Var_str.Add(new str_cl(list[0], value.ToString()));
+                }
+                if (type_to == "int")
+                {
+                    Var_drob.RemoveAt(n);
+                    Var_int.Add(new int_cl(list[0], (int)value));
+                }
+            }
+        }
+
+        static void create_file(List<string> list) {
+            List<string> list_file = Parse_var(list);
+            string filePath = list_file[0];
+            using (StreamWriter writer = new StreamWriter(filePath, false, Encoding.UTF8)) { writer.WriteLine(""); }
+                        ; // по умолчанию файл пустой
+        }
+
+        static void write_file(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string       filePath  = list_file[0];
+            string       text      = Collect(list_file, 1, " ");
+            if (File.Exists(filePath))
+                File.WriteAllTextAsync(filePath, text, Encoding.UTF8);
+            else { ShowError("Файла не существует"); }
+
+        }
+        static void append_file(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string filePath = list_file[0];
+            string text = Collect(list_file, 1, " ");
+            if (File.Exists(filePath))
+                File.AppendAllText(filePath, text, Encoding.UTF8);
+            else { ShowError("Файла не существует"); }
+
+        }
+
+        static void read_file(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string filePath = list_file[0];
+            if (File.Exists(filePath))
+            {
+                string allContent = File.ReadAllText(filePath, Encoding.UTF8);
+                Console.WriteLine(allContent);
+            }
+            else { ShowError("Файла не существует"); }
+
+        }
+        static void read_var_file(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string nameVar = list_file[0];
+            string filePath = list_file[1];
+            if (File.Exists(filePath))
+            {
+                string allContent = Rep_into(File.ReadAllText(filePath, Encoding.UTF8));
+                CreateVar(nameVar, allContent);
+            }
+            else { ShowError("Файла не существует"); }
+        }
+
+        static void del_file(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string filePath = list_file[0];
+            if (File.Exists(filePath))
+            { File.Delete(filePath); }
+            else { ShowError("Файла не существует"); }
+
+        }
+
+        static void create_folder(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string folderPath = list_file[0];
+            DirectoryInfo directoryInfo = Directory.CreateDirectory(folderPath);
+        }
+
+        static void del_rf_folder(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string folderPath = list_file[0];
+            if (Directory.Exists(folderPath))
+                Directory.Delete(folderPath, recursive: true);
+            else { ShowError("Папки не существует"); }
+        }
+
+        static void exists(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string path = list_file[0];
+            if (File.Exists(path))
+                Console.WriteLine($"Файл '{path}' существует");
+            else if (Directory.Exists(path))
+                Console.WriteLine($"Папка '{path}' существует");
+            else
+                Console.WriteLine($"'{path}' не найден");
+        }
+
+        static void open_file(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string filePath = list_file[0];
+            try
+            {
+                // Вариант 1: С ProcessStartInfo
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = filePath,
+                    UseShellExecute = true  // Важно для Windows!
+                });
+
+                // Или вариант 2: Проверить существование
+                if (File.Exists(filePath))
+                {
+                    Process.Start(filePath);
+                }
+                else
+                {
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError($"Возникла ошибка при открытии файла '{filePath}'");
+            }
+
+        }
+
+        static void dir_folder(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string path = list_file[0];
+
+            if (Directory.Exists(path))
+            {
+                Console.WriteLine($"Содержимое {path}:");
+                foreach (var file in Directory.GetFiles(path))
+                {
+                    Console.WriteLine($">[ФАЙЛ]   {Path.GetFileName(file)}");
+                }
+                foreach (var dir in Directory.GetDirectories(path))
+                {
+                    Console.WriteLine($">[ПАПКА]  {Path.GetFileName(dir)}");
+                }
+            }
+            else
+            {
+                ShowError($"Папка '{path}' не найдена");
+            }
+        }
+
+        static void dir_rf_folder(List<string> list)
+        {
+            List<string> list_file = Parse_var(list);
+            string path = list_file[0];
+
+            string mul(char a, int b)
+            {
+                string A = "";
+                for (int i = 0; i < b; i++)
+                {
+                    A += a;
+                }
+
+                return A;
+
+            }
+            void dir_rf(string? path, int level)
+            {
+                int a = 3;
+                foreach (var file in Directory.GetFiles(path))
+                {
+                    Console.WriteLine($"{mul('>', level)}{mul(' ', level * a)}[ФАЙЛ]  {Path.GetFileName(file)}");
+                }
+                foreach (var dir in Directory.GetDirectories(path))
+                {
+                    Console.WriteLine($"{mul('>', level)}{mul(' ', level * a)}[ПАПКА] {Path.GetFileName(dir)}");
+                    dir_rf(path + "\\" + Path.GetFileName(dir), level + 1);
+                }
+            }
+
+            if (Directory.Exists(path))
+            {
+                Console.WriteLine($"Содержимое {path}:");
+                dir_rf(path, 1);
+            }
+            else
+            {
+                Console.WriteLine($"Папка '{path}' не найдена");
+            }
+        }
+
         static void Out(List<string> A) {
             /*Вывод по командам*/
             bool flag = true;
             switch (A[0])
             {
+                // общие команды
                 case "exit":
                     exit_fun();
                     break;
@@ -712,7 +1048,8 @@ namespace Consolesoft
                 case "history":
                     history_fun();
                     break;
-
+                
+                // ЯПшные команды
                 case "print": // вывод
                     print(A);
                     break;
@@ -765,8 +1102,72 @@ namespace Consolesoft
                     mod_vars(A);
                     break;
 
+                // файлы и работа с ними
+                case "create": // создать файл
+                    create_file(A);
+                    break;
+
+                case "write": // перезаписать
+                    write_file(A);
+                    break;
+
+                case "append": // дописать
+                    append_file(A);
+                    break;
+
+                case "read": // прочитать
+                    read_file(A);
+                    break;
+
+                case "read_var": // записать файл в переменную
+                    read_var_file(A);
+                    break;
+
+                case "del": // удалить файл
+                    del_file(A);
+                    break;
+
+                case "create_rep": // создать папку
+                    create_folder(A);
+                    break;
+
+                case "del_rf": // удалять папку рекурсивно
+                    del_rf_folder(A);
+                    break;
+
+                case "exists": // проверить существование
+                    exists(A);
+                    break;
+
+                case "open": // запустить файл
+                    open_file(A);
+                    break;
+
+                case "dir": // файлы и папки в папке
+                    dir_folder(A);
+                    break;
+
+                case "dir_rf": // файлы и папки в папке рекурсивно
+                    dir_rf_folder(A);
+                    break;
+
                 default:
-                    flag = false;
+                    try
+                    {
+                        // ЯПшные команды
+                        switch (A[2])
+                        {
+                            case "to": // приведение типа данных
+                                to_type(A);
+                                break;
+
+                            default:
+                                flag = false;
+                                break;
+                        }
+                    }
+                    catch (Exception e) { }
+
                     break;
             }
             if (flag) {
@@ -793,7 +1194,7 @@ namespace Consolesoft
                 }
                 catch (Exception e) {
                     // чтоб при ошибке программа не вылетала а продолжала работать
-                    Console.WriteLine(red + "Вызвана ошибка" + select_color);    
+                    Console.WriteLine(red + $"Вызвана ошибка" + select_color);    
                 }
             }
         }
