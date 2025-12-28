@@ -513,6 +513,7 @@ namespace Consolesoft
             if (string.IsNullOrEmpty(x)) return "\\0";
 
             return x
+                .Replace("\\", "\\`")
                 .Replace("{", "\\[")
                 .Replace("}", "\\]")
                 .Replace("\\[", "\\\\(")
@@ -521,7 +522,6 @@ namespace Consolesoft
                 .Replace("\n", "\\n")
                 .Replace(",", "\\.")
                 .Replace(":", "\\;")
-                .Replace("\\", "\\`")
                 ;
         }
 
