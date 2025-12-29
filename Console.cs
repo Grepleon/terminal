@@ -62,14 +62,14 @@ namespace Console2
                              // [list [int 5, str букашка, list [str картошка, str еще\_что-то]], list [str автобус, int 5], str камаз]
         static public char[] chars = { ' ', '[', ']', ',' };
         static public char[] chars2 = { ' ', '\0', ',' };
-        List<string> list;
+        public List<string> list;
 
 
 
         public list_cl(string name, string val)
         {
             this.name = name;
-            this.value = Rep_in(val);
+            this.value = val;
             list = Parser();
 
         }
@@ -103,28 +103,6 @@ namespace Console2
             return A2;
 
         }
-        private string Rep_in(string x)
-        {
-            return x.Replace("{", "\\[").Replace("}", "\\]")
-                .Replace("\\[", "\\\\(").Replace("\\]", "\\\\)")
-                ;
-
-        }
-        private string Rep_out(string x)
-        {
-            return x
-                .Replace("\\(", "[").Replace("\\)", "]")
-                .Replace("\\[", "{").Replace("\\]", "}")
-                .Replace("\\n", "\n")
-                .Replace("\\t", "\t")
-                .Replace("\\_", " ")
-                .Replace("\\;", ":")
-                .Replace("\\.", ",")
-                .Replace("\\0", "")
-                .Replace("\\`", "\\")
-                ;
-
-        }
 
         public string find_i(int i)
         {
@@ -146,12 +124,103 @@ namespace Console2
                     else if ((n - 1) % 2 == 1)
                     {
                         // это значение
-                        val = Rep_out(s);
+                        val = s;
                     }
                 }
             }
 
             return type + " " + val;
+        }
+
+        public void write_element (int i, string _type, string _value)
+        {
+            string type = "", val = "";
+            int n = -1;
+            for (int j = 0; j < list.Count; j++)
+            {
+                var s = list[j];
+                n++; // самый первый символ - [, нет смысла рассматривать
+
+                if ((n + 1) / 2 == i + 1)
+                { //значится нашли
+                    if ((n - 1) % 2 == 0)
+                    {
+                        // это тип данных
+                        type = s;
+                        if (type != "auto") // auto - не менять тип данных
+                            list[n] = _type;
+                    }
+                    else if ((n - 1) % 2 == 1)
+                    {
+                        // это значение
+                        val = s;
+                        list[n] = _value;
+                    }
+                }
+            }
+            new_string();
+
+        }
+
+        private void new_string() {
+            string new_val = ""; int n = 0;
+            foreach (string s in list) { new_val += s + (n % 2 != 0 || n == 0 || n == list.Count - 2 ? " " : ", "); n++; }
+            //                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            //                                                    обрезаем запятые в конце и в начале
+            this.value = new_val; // обновляем значение stringа, чтоб отображалось правильно
+        }
+
+        public void add(string _type, string _value)
+        {
+            string type = "", val = "";
+            int n = -1;
+            list.RemoveAt(list.Count - 1);
+            list.Add(_type);
+            list.Add(_value);
+            list.Add("]");
+            new_string();
+
+        }
+
+        public void pop(int i)
+        {
+            string type = "", val = "";
+            int n = -1;
+            var list2 = new List<string>();
+            
+            int N = list.Count;
+            for (int j = 0; j < N; j++)
+            { 
+                list2.Add(list[j]); 
+            }
+            
+            for (int j = 0; j < N; j++)
+            {
+                
+                var s = list[j];
+                n++; // самый первый символ - [, нет смысла рассматривать
+
+                if ((n + 1) / 2 == i + 1)
+                { //значится нашли
+                    if ((n - 1) % 2 == 0)
+                    {
+                        list2.RemoveAt(n);
+                    }
+                    else if ((n - 1) % 2 == 1)
+                    {
+                        list2.RemoveAt(n - 1); // т.к. один уже удален
+                    }
+                }
+                
+            }
+
+            this.list = new List<string>();
+            for (int j = 0; j < list2.Count; j++)
+            {
+                list.Add(list2[j]);
+            }
+            new_string();
+
         }
     }
 }
@@ -209,6 +278,17 @@ namespace Consolesoft
             foreach (string i in reg2)
             {
                 reg.Add(Rep_out(i));
+            }
+            return reg;
+        }
+
+        static List<string> listParse_var(List<string> A)
+        {
+            List<string> reg2 = new List<string>(Collect_ns(A, 2).Split(" "));
+            var reg = new List<string>();
+            foreach (string i in reg2)
+            {
+                reg.Add(i);
             }
             return reg;
         }
@@ -276,6 +356,8 @@ namespace Consolesoft
 
             return A;
         }
+
+        
         static bool exists(string n)
         {
             bool flag = false;
@@ -508,6 +590,20 @@ namespace Consolesoft
                 ;
         }
 
+        static string listRep_in(string x)
+        {
+            if (string.IsNullOrEmpty(x)) return "\\0";
+
+            return x
+                .Replace("{", "\\[")
+                .Replace("}", "\\]")
+                .Replace("\\[", "\\\\(")
+                .Replace("\\]", "\\\\)")
+                .Replace("\n", "\\n")
+                .Replace(":", "\\;")
+                ;
+        }
+
         static string Rep_into(string x)
         {
             if (string.IsNullOrEmpty(x)) return "\\0";
@@ -557,7 +653,8 @@ namespace Consolesoft
             return result;
         }
 
-        static double to_drob(string n) { 
+        static double to_drob(string n) 
+        { 
             double a = double.Parse(n.Replace(",", "."), CultureInfo.InvariantCulture);
             return a;
         }
@@ -629,6 +726,17 @@ namespace Consolesoft
             }
         }
 
+        static void CreateList(string name, string val)
+        {
+            if (!exists(name))
+                Var_list.Add(new list_cl(name, val));
+            else
+            {
+                int num = number(name);
+                Var_list[num] = new list_cl(name, val);
+            }
+        }
+
         static void str_var_create(List<string> list, int k)
         { 
             string name = list[k];
@@ -655,6 +763,14 @@ namespace Consolesoft
             CreateVar(name, val);
         }
 
+        static void list_var_create(List<string> list, int k)
+        {
+            string name = list[k];
+            string val = listRep_in(Collect(list, k + 2));
+
+            CreateList(name, val);
+        }
+
         static void set_var(List<string> list)
         {
             if (list[2] == "str")
@@ -663,6 +779,37 @@ namespace Consolesoft
                 int_var_create(list, 4);
             if (list[2] == "drob") 
                 drob_var_create(list, 4);
+            if (list[2] == "list")
+                list_var_create(list, 4);
+        }
+
+        static void get_var(List<string> list)
+        {
+            string name = list[2];
+            Console.Write(green + ">\r");
+            string val = Console.ReadLine();
+            Console.Write(reset);
+
+            CreateVar(name, val);
+        }
+
+        static void del_var(List<string> list)
+        {
+            string name = list[2];
+            string t    = type(name);
+            int    index = number(name);
+            if (exists(name))
+            {
+                if (t == "int")
+                    Var_int.RemoveAt(index);
+                if (t == "drob")
+                    Var_drob.RemoveAt(index);
+                if (t == "list")
+                    Var_list.RemoveAt(index);
+                if (t == "str")
+                    Var_str.RemoveAt(index);
+            }
+
         }
 
         static void add_vars(List<string> list)
@@ -681,6 +828,30 @@ namespace Consolesoft
             }
             if (t == "str"){
                 Var_str[num].value += reg;
+            }
+            if (t == "list")
+            {
+                // добавить элемент
+                // add list type value
+                reg = Rep_outf(Collect(list, 6));
+                string _t = list[4];
+                Var_list[num].add(_t, reg);
+            }
+        }
+
+        static void pop_list(List<string> list)
+        {
+            string reg = Rep_outf(Collect(list, 4));
+
+            string name = list[2];
+            string t = type(name);
+            int num = number(name);
+
+            if (t == "list")
+            {
+                // удалить элемент по индексу
+                // pop list index
+                Var_list[num].pop(int.Parse(reg));
             }
         }
 
@@ -1035,6 +1206,117 @@ namespace Consolesoft
             }
         }
 
+        static void auto_create_var(string type, string value, string name)
+        {
+            if (type == "str")
+            {
+                CreateVar(name, value);
+            }
+            if (type == "int")
+            {
+                CreateVar(name, int.Parse(value));
+            }
+            if (type == "drob")
+            {
+                CreateVar(name, double.Parse(value));
+            }
+            if (type == "list")
+            {
+                CreateList(name, value);
+            }
+        }
+
+        static void return_element(List<string> A) {
+            var list = listParse_var(A);
+            string name = list[0];
+            int index = int.Parse(list[1]);
+            string list_val = Collect(list, 2, " ");
+            list_cl list_var = new list_cl("new_list", list_val);
+
+       
+            List<string> type_and_value = new List<string>(list_var.find_i(index).Split(" "));
+
+            string e_type = type_and_value[0];
+            string e_value = type_and_value[1];
+
+            auto_create_var(e_type, e_value, name);
+        }
+
+        static void write_element(List<string> A)
+        {
+            var list = listParse_var(A);
+            string name = list[0];
+            list_cl _list;
+            int index = int.Parse(list[1]);
+            string _type = list[3];
+            string value = Rep_in(Collect(list, 4, " "));
+            for (int i = 0; i < Var_list.Count; i++)
+            {
+                if (Var_list[i].name == name)
+                {
+                    _list = Var_list[i]; _list.write_element(index, _type, value); break;
+                }
+            }
+            
+        }
+
+        static void element_select(List<string> list)
+        {
+            // Записать i-тый элемент в переменную
+            // element var i list
+            // Записать переменную в i-тый элемент
+            // element list i is type var
+            
+
+            if (list[6] == "is")
+            {
+                // Записать переменную в i-тый элемент
+                write_element(list);
+            }
+            else 
+            {
+                // Записать i-тый элемент в переменную
+                return_element(list);
+            }
+        }
+
+        static void color_fun(List<string> list) {
+            var reg = Parse_var(list);
+            switch (reg[0]) {
+                case "reset":
+                    select_color = reset;
+                    Console.Write(reset);
+                    break;
+                case "red":
+                    select_color = red;
+                    Console.Write(red);
+                    break;
+                case "blue":
+                    select_color = blue;
+                    Console.Write(blue);
+                    break;
+                case "green":
+                    select_color = green;
+                    Console.Write(green);
+                    break;
+                case "white":
+                    select_color = white;
+                    Console.Write(white);
+                    break;
+                case "black":
+                    select_color = black;
+                    Console.Write(black);
+                    break;
+                case "rgb":
+                    string R = reg[1];
+                    string G = reg[2];
+                    string B = reg[3];
+                    select_color = $"\u001b[38;2;{R};{G};{B}m";
+                    Console.Write(select_color);
+                    break;
+            }
+        }
+
         static void Out(List<string> A) {
             /*Вывод по командам*/
             bool flag = true;
@@ -1048,7 +1330,11 @@ namespace Consolesoft
                 case "history":
                     history_fun();
                     break;
-                
+
+                case "color":
+                    color_fun(A);
+                    break;
+
                 // ЯПшные команды
                 case "print": // вывод
                     print(A);
@@ -1066,6 +1352,14 @@ namespace Consolesoft
                     set_var(A);
                     break;
 
+                case "get":
+                    get_var(A);
+                    break;
+
+                case "del_var":
+                    del_var(A);
+                    break;
+
                 case "str":
                     str_var_create(A, 2);
                     break;
@@ -1078,8 +1372,16 @@ namespace Consolesoft
                     drob_var_create(A, 2);
                     break;
 
-                case "add": // сложить
+                case "list":
+                    list_var_create(A, 2);
+                    break;
+
+                case "add": // сложить/добавить в список
                     add_vars(A);
+                    break;
+
+                case "pop": // удалить по индексу
+                    pop_list(A);
                     break;
 
                 case "sub": // вычесть
@@ -1100,6 +1402,10 @@ namespace Consolesoft
 
                 case "mod": // остаток от деления
                     mod_vars(A);
+                    break;
+
+                case "element":
+                    element_select(A);
                     break;
 
                 // файлы и работа с ними
