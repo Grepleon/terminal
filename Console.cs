@@ -40,12 +40,12 @@ namespace Console2
         }
     }
 
-    class drob_cl
+    class real_cl
     {
         public string name;
         public double value;
 
-        public drob_cl(string name, double val)
+        public real_cl(string name, double val)
         {
             this.name = name;
             this.value = val;
@@ -132,7 +132,7 @@ namespace Console2
             return type + " " + val;
         }
 
-        public void write_element (int i, string _type, string _value)
+        public void write_element(int i, string _type, string _value)
         {
             string type = "", val = "";
             int n = -1;
@@ -147,7 +147,7 @@ namespace Console2
                     {
                         // это тип данных
                         type = s;
-                        if (type != "auto") // auto - не менять тип данных
+                        if (_type != "auto") // auto - не менять тип данных
                             list[n] = _type;
                     }
                     else if ((n - 1) % 2 == 1)
@@ -162,7 +162,8 @@ namespace Console2
 
         }
 
-        private void new_string() {
+        private void new_string()
+        {
             string new_val = ""; int n = 0;
             foreach (string s in list) { new_val += s + (n % 2 != 0 || n == 0 || n == list.Count - 2 ? " " : ", "); n++; }
             //                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -187,16 +188,16 @@ namespace Console2
             string type = "", val = "";
             int n = -1;
             var list2 = new List<string>();
-            
+
             int N = list.Count;
             for (int j = 0; j < N; j++)
-            { 
-                list2.Add(list[j]); 
+            {
+                list2.Add(list[j]);
             }
-            
+
             for (int j = 0; j < N; j++)
             {
-                
+
                 var s = list[j];
                 n++; // самый первый символ - [, нет смысла рассматривать
 
@@ -211,7 +212,7 @@ namespace Console2
                         list2.RemoveAt(n - 1); // т.к. один уже удален
                     }
                 }
-                
+
             }
 
             this.list = new List<string>();
@@ -223,6 +224,19 @@ namespace Console2
 
         }
     }
+
+    class bool_cl
+    {
+        public string name;
+        public bool value;
+
+        public bool_cl(string name, bool val)
+        {
+            this.name = name;
+            this.value = val;
+        }
+    }
+    
 }
 
 namespace Consolesoft
@@ -242,13 +256,18 @@ namespace Consolesoft
 
         static public List<str_cl>  Var_str      = new List<str_cl>  ();
         static public List<int_cl>  Var_int      = new List<int_cl>  ();
-        static public List<drob_cl> Var_drob     = new List<drob_cl> ();
+        static public List<real_cl> Var_real     = new List<real_cl> ();
         static public List<list_cl> Var_list     = new List<list_cl> ();
+        static public List<bool_cl> Var_bool     = new List<bool_cl>();
 
-        static public char[] chars               = { '{', '}', ' ', '[', ']' };
-        static public char[] chars2              = { '{', '}' };
+        static public char[]     chars           = { '{', '}', ' ', '[', ']' };
+        static public char[]     chars2          = { '{', '}' };
 
-        static bool          flag_exit           = false;
+        static public bool       flag_exit       = false;
+
+        static public int        level_condition = 0;
+        static public List<bool> conditions      = new List<bool>();
+        static public bool       condition_if    = true;
 
         static List<string> Parse(string a)
         {
@@ -296,7 +315,7 @@ namespace Consolesoft
         static List<string> Input() {
             Console.Write(""); 
             bool   is_many = false;
-            string a       = Console.ReadLine();
+            string a = Console.ReadLine().Split("\\\\")[0]; // \\ - комментарий
             
             if (a.Contains("\\*"))
             {
@@ -306,7 +325,7 @@ namespace Consolesoft
             while (is_many)
             {
                 Console.Write(">\r");
-                string _a = Console.ReadLine();
+                string _a = Console.ReadLine().Split("\\\\")[0];
                 a += "\\n" + _a;
                 if (_a.Contains("\\*"))
                 {
@@ -338,11 +357,11 @@ namespace Consolesoft
                 }
             }
 
-            for (int i = 0; i < Var_drob.Count; i++)
+            for (int i = 0; i < Var_real.Count; i++)
             {
-                if (Var_drob[i].name == a)
+                if (Var_real[i].name == a)
                 {
-                    A = Var_drob[i].value.ToString(CultureInfo.InvariantCulture); break;
+                    A = Var_real[i].value.ToString(CultureInfo.InvariantCulture); break;
                 }
             }
 
@@ -351,6 +370,14 @@ namespace Consolesoft
                 if (Var_list[i].name == a)
                 {
                     A = Var_list[i].value; break;
+                }
+            }
+
+            for (int i = 0; i < Var_bool.Count; i++)
+            {
+                if (Var_bool[i].name == a)
+                {
+                    A = Var_bool[i].value.ToString(CultureInfo.InvariantCulture); break;
                 }
             }
 
@@ -376,7 +403,7 @@ namespace Consolesoft
                     flag = true;
                 }
             }
-            foreach (var i in Var_drob)
+            foreach (var i in Var_real)
             {
                 if (i.name == n)
                 {
@@ -384,6 +411,13 @@ namespace Consolesoft
                 }
             }
             foreach (var i in Var_list)
+            {
+                if (i.name == n)
+                {
+                    flag = true;
+                }
+            }
+            foreach (var i in Var_bool)
             {
                 if (i.name == n)
                 {
@@ -412,11 +446,11 @@ namespace Consolesoft
                     flag = "int";
                 }
             }
-            foreach (var i in Var_drob)
+            foreach (var i in Var_real)
             {
                 if (i.name == n)
                 {
-                    flag = "drob";
+                    flag = "real";
                 }
             }
             foreach (var i in Var_list)
@@ -424,6 +458,13 @@ namespace Consolesoft
                 if (i.name == n)
                 {
                     flag = "list";
+                }
+            }
+            foreach (var i in Var_bool)
+            {
+                if (i.name == n)
+                {
+                    flag = "bool";
                 }
             }
 
@@ -455,7 +496,7 @@ namespace Consolesoft
                 n2++;
             }
             n2 = 0;
-            foreach (var i in Var_drob)
+            foreach (var i in Var_real)
             {
                 if (i.name == n)
                 {
@@ -466,6 +507,16 @@ namespace Consolesoft
             }
             n2 = 0;
             foreach (var i in Var_list)
+            {
+                if (i.name == n)
+                {
+                    num = n2;
+                }
+
+                n2++;
+            }
+            n2 = 0;
+            foreach (var i in Var_bool)
             {
                 if (i.name == n)
                 {
@@ -653,12 +704,12 @@ namespace Consolesoft
             return result;
         }
 
-        static double to_drob(string n) 
+        static double to_real(string n) 
         { 
             double a = double.Parse(n.Replace(",", "."), CultureInfo.InvariantCulture);
             return a;
         }
-        static double to_drob(int n)
+        static double to_real(int n)
         {
             double a = n;
             return a;
@@ -670,6 +721,11 @@ namespace Consolesoft
 
         static void exit_fun() {
             flag_exit = true;
+        }
+
+        static void clear_fun()
+        {
+            Console.Clear();
         }
 
         static void history_fun() {
@@ -704,6 +760,17 @@ namespace Consolesoft
             }
         }
 
+        static void CreateVar(string name, bool val)
+        {
+            if (!exists(name))
+                Var_bool.Add(new bool_cl(name, val));
+            else
+            {
+                int num = number(name);
+                Var_bool[num] = new bool_cl(name, val);
+            }
+        }
+
         static void CreateVar(string name, int val)
         {
             if (!exists(name))
@@ -718,11 +785,11 @@ namespace Consolesoft
         static void CreateVar(string name, double val)
         {
             if (!exists(name))
-                Var_drob.Add(new drob_cl(name, val));
+                Var_real.Add(new real_cl(name, val));
             else
             {
                 int num = number(name);
-                Var_drob[num] = new drob_cl(name, val);
+                Var_real[num] = new real_cl(name, val);
             }
         }
 
@@ -754,10 +821,67 @@ namespace Consolesoft
             CreateVar(name, val);
         }
 
-        static void drob_var_create(List<string> list, int k)
+        static void bool_var_create(List<string> list, int k)
         {
             string name = list[k];
-            double val = to_drob(Collect(list, k + 2));
+            string _val = Collect(list, k + 2);
+            bool val=false;
+            if (_val.ToLower() == "false") val = false;
+            else if (_val.ToLower() == "true") val = true;
+            else { // а далее выражения
+                var list_val = new List<string>(_val.Split());
+                // ! a - отрицание
+                // not a - отрицание
+                // a == b - равно?
+                // a != b - не равно?
+                // a > b - больше
+                // a >= b - больше равно
+                // a < b - меньше
+                // a <= b - меньше b
+                // a and b - лог. И
+                // a or b - лог. ИЛИ
+                if (list_val.Count() == 2)
+                {
+                    val = !(bool.Parse(list_val[1]));
+                }
+                else {
+                    switch (list_val[1]) {
+                        case "==":
+                            val = list_val[0] == list_val[2];
+                            break;
+                        case "!=":
+                            val = list_val[0] != list_val[2];
+                            break;
+                        case ">=":
+                            val = to_real(list_val[0]) >= to_real(list_val[2]);
+                            break;
+                        case "<=":
+                            val = to_real(list_val[0]) <= to_real(list_val[2]);
+                            break;
+                        case ">":
+                            val = to_real(list_val[0]) >  to_real(list_val[2]);
+                            break;
+                        case "<":
+                            val = to_real(list_val[0]) < to_real(list_val[2]);
+                            break;
+                        case "and":
+                            val = bool.Parse(list_val[0]) && bool.Parse(list_val[2]);
+                            break;
+                        case "or":
+                            val = bool.Parse(list_val[0]) || bool.Parse(list_val[2]);
+                            break;
+                    }
+                }
+            }
+                int num = -1;
+
+            CreateVar(name, val);
+        }
+
+        static void real_var_create(List<string> list, int k)
+        {
+            string name = list[k];
+            double val = to_real(Collect(list, k + 2));
             int num = -1;
 
             CreateVar(name, val);
@@ -775,12 +899,30 @@ namespace Consolesoft
         {
             if (list[2] == "str")
                 str_var_create(list, 4);
-            if (list[2] == "int")
+            else if (list[2] == "int")
                 int_var_create(list, 4);
-            if (list[2] == "drob") 
-                drob_var_create(list, 4);
-            if (list[2] == "list")
+            else if (list[2] == "real")
+                real_var_create(list, 4);
+            else if (list[2] == "list")
                 list_var_create(list, 4);
+            else if (list[2] == "bool")
+                bool_var_create(list, 4);
+            else // иначе: (для него уже нужна созданная переменная)
+                 // set var val (не нужно указывать тип данных)
+            {
+                string name = list[2];
+                string t = type(name);
+                if (t == "str")   str_var_create(list, 2);
+                if (t == "int")   int_var_create(list, 2);
+                if (t == "real") real_var_create(list, 2);
+                if (t == "list") list_var_create(list, 2);
+                if (t == "bool") bool_var_create(list, 2);
+            }
+        }
+
+        static void decide_var(List<string> list)
+        {
+            // сделаю позже
         }
 
         static void get_var(List<string> list)
@@ -802,8 +944,8 @@ namespace Consolesoft
             {
                 if (t == "int")
                     Var_int.RemoveAt(index);
-                if (t == "drob")
-                    Var_drob.RemoveAt(index);
+                if (t == "real")
+                    Var_real.RemoveAt(index);
                 if (t == "list")
                     Var_list.RemoveAt(index);
                 if (t == "str")
@@ -823,8 +965,9 @@ namespace Consolesoft
             if (t == "int") {
                 Var_int[num].value += int.Parse(reg);
             }
-            if (t == "drob"){
-                Var_drob[num].value += to_drob(reg);
+            if (t == "real")
+            {
+                Var_real[num].value += to_real(reg);
             }
             if (t == "str"){
                 Var_str[num].value += reg;
@@ -867,9 +1010,9 @@ namespace Consolesoft
             {
                 Var_int[num].value -= int.Parse(reg);
             }
-            if (t == "drob")
+            if (t == "real")
             {
-                Var_drob[num].value -= to_drob(reg);
+                Var_real[num].value -= to_real(reg);
             }
         }
 
@@ -884,9 +1027,9 @@ namespace Consolesoft
             if (t == "int"){
                 Var_int[num].value *= int.Parse(reg);
             }
-            if (t == "drob")
+            if (t == "real")
             {
-                Var_drob[num].value *= to_drob(reg);
+                Var_real[num].value *= to_real(reg);
             }
             if (t == "str"){
                 string val = Var_str[num].value;
@@ -911,11 +1054,11 @@ namespace Consolesoft
 
                 Var_int[num].value /= int.Parse(reg);
             }
-            if (t == "drob")
+            if (t == "real")
             {
-                if (to_drob(reg) == 0) { ShowError("Деление на 0 невозможно"); return 0; }
+                if (to_real(reg) == 0) { ShowError("Деление на 0 невозможно"); return 0; }
 
-                Var_drob[num].value /= to_drob(reg);
+                Var_real[num].value /= to_real(reg);
             }
 
             return 1;
@@ -933,9 +1076,9 @@ namespace Consolesoft
             {
                 Var_int[num].value = (int)Math.Pow(Var_int[num].value, int.Parse(reg));
             }
-            if (t == "drob")
+            if (t == "real")
             {
-                Var_drob[num].value = Math.Pow(Var_drob[num].value, to_drob(reg));
+                Var_real[num].value = Math.Pow(Var_real[num].value, to_real(reg));
             }
 
         }
@@ -960,36 +1103,55 @@ namespace Consolesoft
                 Var_int[num].value = result;
             }
 
-            if (t == "drob")
+            if (t == "real")
             {
-                double divisor = to_drob(reg);
+                double divisor = to_real(reg);
                 if (divisor == 0) { ShowError("Деление на 0 невозможно"); return 0; }
 
                 // Для дробных: fmod (остаток от деления)
-                Var_drob[num].value = Var_drob[num].value % divisor;
+                Var_real[num].value = Var_real[num].value % divisor;
             }
 
             return 1;
         }
 
-        static void to_type(List<string> list) {
-            string name     = list[0];
-            string t        = type(name);
-            string type_to  = list[4];
-            int    n        = number(name);
-            
+        static void len_list(List<string> list)
+        {
+            // len var list \\ var - всегда intовая
+
+            var reg = Parse_var(list);
+
+            string name = reg[0];
+            string val = Collect(reg, 1, " ");
+            list_cl _list = new list_cl("new_list", val);
+
+            CreateVar(name, _list.list.Count() / 2 - 1);
+
+        }
+        static void to_type(List<string> list)
+        {
+            string name = list[0];
+            string t = type(name);
+            string type_to = list[4];
+            int n = number(name);
+
             if (t == "str")
             {
                 string value = Var_str[n].value;
-                if (type_to == "int") 
+                if (type_to == "int")
                 {
                     Var_str.RemoveAt(n);
                     Var_int.Add(new int_cl(list[0], Convert.ToInt32(value)));
                 }
-                if (type_to == "drob")
+                if (type_to == "real")
                 {
                     Var_str.RemoveAt(n);
-                    Var_drob.Add(new drob_cl(list[0], to_drob(value)));
+                    Var_real.Add(new real_cl(list[0], to_real(value)));
+                }
+                if (type_to == "bool")
+                {
+                    Var_str.RemoveAt(n);
+                    Var_bool.Add(new bool_cl(list[0], bool.Parse(value)));
                 }
             }
             if (t == "int")
@@ -1000,24 +1162,34 @@ namespace Consolesoft
                     Var_int.RemoveAt(n);
                     Var_str.Add(new str_cl(list[0], value.ToString()));
                 }
-                if (type_to == "drob")
+                if (type_to == "real")
                 {
                     Var_int.RemoveAt(n);
-                    Var_drob.Add(new drob_cl(list[0], to_drob(value)));
+                    Var_real.Add(new real_cl(list[0], to_real(value)));
                 }
             }
-            if (t == "drob")
+            if (t == "real")
             {
-                double value = Var_drob[n].value;
+                double value = Var_real[n].value;
                 if (type_to == "str")
                 {
-                    Var_drob.RemoveAt(n);
+                    Var_real.RemoveAt(n);
                     Var_str.Add(new str_cl(list[0], value.ToString()));
                 }
                 if (type_to == "int")
                 {
-                    Var_drob.RemoveAt(n);
+                    Var_real.RemoveAt(n);
                     Var_int.Add(new int_cl(list[0], (int)value));
+                }
+            }
+            if (t == "bool")
+            {
+                bool value = Var_bool[n].value;
+
+                if (type_to == "str")
+                {
+                    Var_bool.RemoveAt(n);
+                    Var_str.Add(new str_cl(list[0], value.ToString()));
                 }
             }
         }
@@ -1216,13 +1388,17 @@ namespace Consolesoft
             {
                 CreateVar(name, int.Parse(value));
             }
-            if (type == "drob")
+            if (type == "real")
             {
                 CreateVar(name, double.Parse(value));
             }
             if (type == "list")
             {
                 CreateList(name, value);
+            }
+            if (type == "bool")
+            {
+                CreateVar(name, bool.Parse(value));
             }
         }
 
@@ -1317,14 +1493,39 @@ namespace Consolesoft
             }
         }
 
+        static void if_fun(List<string> list)
+        {
+            string collected_value = Collect(list, 2);
+            level_condition++;
+            conditions.Add(bool.Parse(collected_value));
+            //condition_if = condition;
+        }
+
+        static void if_fun_false()
+        {
+            level_condition++;
+            conditions.Add(false);
+            //condition_if = condition;
+        }
+
+        static void end_fun()
+        {
+            level_condition--; conditions.RemoveAt(level_condition);
+        }
+
+
         static void Out(List<string> A) {
             /*Вывод по командам*/
             bool flag = true;
-            switch (A[0])
+            switch (A[0].Replace("\t", "")) // чтобы можно было делать табы для отступа визуального
             {
                 // общие команды
                 case "exit":
                     exit_fun();
+                    break;
+
+                case "clear":
+                    clear_fun();
                     break;
 
                 case "history":
@@ -1368,12 +1569,20 @@ namespace Consolesoft
                     int_var_create(A, 2);
                     break;
 
-                case "drob":
-                    drob_var_create(A, 2);
+                case "real":
+                    real_var_create(A, 2);
                     break;
 
                 case "list":
                     list_var_create(A, 2);
+                    break;
+
+                case "bool":
+                    bool_var_create(A, 2);
+                    break;
+
+                case "decide":
+                    decide_var(A); // решить любое выражение (даже сложное)
                     break;
 
                 case "add": // сложить/добавить в список
@@ -1406,6 +1615,10 @@ namespace Consolesoft
 
                 case "element":
                     element_select(A);
+                    break;
+
+                case "len":
+                    len_list(A);
                     break;
 
                 // файлы и работа с ними
@@ -1457,6 +1670,20 @@ namespace Consolesoft
                     dir_rf_folder(A);
                     break;
 
+                // условия, циклы и т.д.
+                case "if":
+                    if_fun(A);
+                    break;
+
+                case "end":
+                    end_fun();
+                    break;
+
+                case "--if":
+                    string c = ""; foreach (bool s in conditions) c += s + " ";
+                    Console.WriteLine(c + " " + level_condition.ToString());
+                    break;
+
                 default:
                     try
                     {
@@ -1481,6 +1708,31 @@ namespace Consolesoft
             }
             
         }
+
+        static void if_false(List<string> A){
+            /*При ложном условии в условии*/
+            bool flag = true;
+            switch (A[0].Replace("\t", "")) // чтобы можно было делать табы для отступа визуального
+            {
+                case "end":
+                    end_fun();
+                    break;
+                case "if":
+                    if_fun_false();
+                    break;
+                case "elif":
+                    level_condition++;
+                    break;
+                case "else":
+                    level_condition++;
+                    break;
+                case "--if":
+                    string c = ""; foreach (bool s in conditions) c += s + " ";
+                    Console.WriteLine(c + " " + level_condition.ToString());
+                    break;
+            }
+        }
+
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -1496,11 +1748,24 @@ namespace Consolesoft
             {
                 A = Input();
                 try{
-                    Out(A);
+                    bool condition=false;
+                    try
+                    {
+                        if (conditions.Count == 0) condition = true;
+                        else condition = conditions[level_condition - 1];
+                    }
+                    catch {
+                        ShowError("Вызвана ошибка при работе с условиями");
+                    }
+
+                    if (condition)
+                        Out(A);
+                    else
+                        if_false(A);
                 }
                 catch (Exception e) {
                     // чтоб при ошибке программа не вылетала а продолжала работать
-                    Console.WriteLine(red + $"Вызвана ошибка" + select_color);    
+                    ShowError("Вызвана ошибка");  
                 }
             }
         }
