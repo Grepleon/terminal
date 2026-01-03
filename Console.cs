@@ -243,31 +243,33 @@ namespace Consolesoft
 {
     internal class Program
     {
-        static public string reset               = "\u001b[0m";
-        static public string white               = $"\u001b[38;2;255;255;255m";
-        static public string black               = $"\u001b[38;2;0;0;0m";
-        static public string blue                = $"\u001b[38;2;0;0;255m";
-        static public string green               = $"\u001b[38;2;0;255;0m";
-        static public string red                 = $"\u001b[38;2;255;100;50m";
+        static public string        reset           =                 "\u001b[0m";
+        static public string        white           = $"\u001b[38;2;255;255;255m";
+        static public string        black           =       $"\u001b[38;2;0;0;0m";
+        static public string        blue            =     $"\u001b[38;2;0;0;255m";
+        static public string        green           =     $"\u001b[38;2;0;255;0m";
+        static public string        red             =  $"\u001b[38;2;255;100;50m";
 
-        static public string        select_color = "\u001b[0m";
+        static public string        select_color    =                 "\u001b[0m";
+        static public string        last_command    =                          "";
 
-        static public List <string> history      = new List <string> ();
+        static public List <string> history         =        new List <string> ();
 
-        static public List<str_cl>  Var_str      = new List<str_cl>  ();
-        static public List<int_cl>  Var_int      = new List<int_cl>  ();
-        static public List<real_cl> Var_real     = new List<real_cl> ();
-        static public List<list_cl> Var_list     = new List<list_cl> ();
-        static public List<bool_cl> Var_bool     = new List<bool_cl>();
+        static public List<str_cl>  Var_str         =        new List<str_cl>  ();
+        static public List<int_cl>  Var_int         =        new List<int_cl>  ();
+        static public List<real_cl> Var_real        =        new List<real_cl> ();
+        static public List<list_cl> Var_list        =        new List<list_cl> ();
+        static public List<bool_cl> Var_bool        =         new List<bool_cl>();
 
-        static public char[]     chars           = { '{', '}', ' ', '[', ']' };
-        static public char[]     chars2          = { '{', '}' };
+        static public char[]        chars           = { '{', '}', ' ', '[', ']' };
+        static public char[]        chars2          =                { '{', '}' };
 
-        static public bool       flag_exit       = false;
+        static public bool          flag_exit       =                       false;
 
-        static public int        level_condition = 0;
-        static public List<bool> conditions      = new List<bool>();
-        static public bool       condition_if    = true;
+        static public int           level_condition =                           0;
+        static public List<bool>    conditions      =            new List<bool>();
+        static public bool          condition_if    =                        true;
+        static public List<bool>    conditions_else =            new List<bool>();
 
         static List<string> Parse(string a)
         {
@@ -334,6 +336,7 @@ namespace Consolesoft
             }
 
             var A = new List<string>(Parse(a));
+            history.Add(a);
             return A;
         }
 
@@ -1495,17 +1498,23 @@ namespace Consolesoft
 
         static void if_fun(List<string> list)
         {
+            if (conditions_else.Count() != 0) 
+                conditions_else.RemoveAt(conditions_else.Count() - 1);
+
             string collected_value = Collect(list, 2);
             level_condition++;
             conditions.Add(bool.Parse(collected_value));
-            //condition_if = condition;
+
+            conditions_else.Add(bool.Parse(collected_value));
         }
 
         static void if_fun_false()
         {
+            if (conditions_else.Count() != 0)
+                conditions_else.RemoveAt(conditions_else.Count() - 1);
+
             level_condition++;
             conditions.Add(false);
-            //condition_if = condition;
         }
 
         static void end_fun()
@@ -1695,7 +1704,6 @@ namespace Consolesoft
                                 break;
 
                             default:
-                                flag = false;
                                 break;
                         }
                     }
@@ -1703,9 +1711,7 @@ namespace Consolesoft
 
                     break;
             }
-            if (flag) {
-                history.Add(A[0]); // сохраняем только именование комманды            
-            }
+            
             
         }
 
