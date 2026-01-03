@@ -243,33 +243,34 @@ namespace Consolesoft
 {
     internal class Program
     {
-        static public string        reset           =                 "\u001b[0m";
-        static public string        white           = $"\u001b[38;2;255;255;255m";
-        static public string        black           =       $"\u001b[38;2;0;0;0m";
-        static public string        blue            =     $"\u001b[38;2;0;0;255m";
-        static public string        green           =     $"\u001b[38;2;0;255;0m";
-        static public string        red             =  $"\u001b[38;2;255;100;50m";
+        static public string        reset           =                                     "\u001b[0m";
+        static public string        white           =                     $"\u001b[38;2;255;255;255m";
+        static public string        black           =                           $"\u001b[38;2;0;0;0m";
+        static public string        blue            =                         $"\u001b[38;2;0;0;255m";
+        static public string        green           =                         $"\u001b[38;2;0;255;0m";
+        static public string        red             =                      $"\u001b[38;2;255;100;50m";
 
-        static public string        select_color    =                 "\u001b[0m";
-        static public string        last_command    =                          "";
+        static public string        select_color    =                                     "\u001b[0m";
+        static public string        last_command    =                                              "";
 
-        static public List <string> history         =        new List <string> ();
+        static public List <string> history         =                            new List <string> ();
 
-        static public List<str_cl>  Var_str         =        new List<str_cl>  ();
-        static public List<int_cl>  Var_int         =        new List<int_cl>  ();
-        static public List<real_cl> Var_real        =        new List<real_cl> ();
-        static public List<list_cl> Var_list        =        new List<list_cl> ();
-        static public List<bool_cl> Var_bool        =         new List<bool_cl>();
+        static public List<str_cl>  Var_str         =                            new List<str_cl>  ();
+        static public List<int_cl>  Var_int         =                            new List<int_cl>  ();
+        static public List<real_cl> Var_real        =                            new List<real_cl> ();
+        static public List<list_cl> Var_list        =                            new List<list_cl> ();
+        static public List<bool_cl> Var_bool        =                             new List<bool_cl>();
 
-        static public char[]        chars           = { '{', '}', ' ', '[', ']' };
-        static public char[]        chars2          =                { '{', '}' };
+        static public char[]        chars           =                     { '{', '}', ' ', '[', ']' };
+        static public char[]        chars2          =                                    { '{', '}' };
+        static public char[]        charsVar        = { '{', '}', ' ', ':', '+', '-', '/', '*', '=' };
 
-        static public bool          flag_exit       =                       false;
+        static public int           level_condition =                                               0;
+        static public List<bool>    conditions      =                                new List<bool>();
+        static public bool          condition_if    =                                            true;
+        static public bool          flag_exit       =                                           false;
 
-        static public int           level_condition =                           0;
-        static public List<bool>    conditions      =            new List<bool>();
-        static public bool          condition_if    =                        true;
-        static public List<bool>    conditions_else =            new List<bool>();
+        static public List<bool>    conditions_else =                                new List<bool>();
 
         static List<string> Parse(string a)
         {
@@ -312,6 +313,37 @@ namespace Consolesoft
                 reg.Add(i);
             }
             return reg;
+        }
+
+        static List<string> ParserForVar(string value)
+        {
+            List<string> A2 = new List<string>();
+            bool flag = false; string new_add = "";
+            int level = 0;
+
+            foreach (char s2 in value)
+            {
+                if (s2 == '{') level++;
+
+                if (charsVar.Contains(s2) && level == 1) // 1 т. к. мы уже в {}
+                {
+                    flag = !flag; if (new_add != "") A2.Add(new_add); new_add = ""; 
+                    
+                    ;
+                }
+                else
+                {
+                    new_add += s2;
+                }
+
+                if (s2 == '}') level--;
+
+            }
+
+            if (new_add != "") A2.Add(new_add);
+
+            return A2;
+
         }
 
         static List<string> Input() {
@@ -532,27 +564,39 @@ namespace Consolesoft
             return num;
         }
 
+        static string forvar(string var) {
+            var = ParseForVar();
+            string x;
+            if (var.Replace(".", "") == var)
+                x = find(var);
+            else { // .x - тип данных переменной x
+                x = type(var.Replace(".", ""));
+            }
 
+            return x;
+        }
         static string Collect(List<string> A, int j) {
             string a = "";
-            bool flag = false;
+            string _var = "";
+            int flag = 0;
             for (int i = j; i < A.Count(); i++)
             {
                 if (A[i] == "{")
                 {
-                    flag = true;
+                    flag ++;
                 }
-                if (!flag)
+                if (flag==0)
                 {
                     a += A[i];
                 }
                 else
                 {
-                   a += find(A[i]);
+                   _var += A[i];
                 }
                 if (A[i] == "}")
                 {
-                    flag = false;
+                    flag --;
+                    if (flag == 0) a += forvar(_var);
                 }
             }
             return a;
@@ -561,24 +605,26 @@ namespace Consolesoft
         static string Collect(List<string> A, int j, string sep)
         {
             string a = "";
-            bool flag = false;
+            string _var = "";
+            int flag = 0;
             for (int i = j; i < A.Count(); i++)
             {
                 if (A[i] == "{")
                 {
-                    flag = true;
+                    flag++;
                 }
-                if (!flag)
+                if (flag==0)
                 {
                     a += A[i] + ((i == A.Count - 1) ? "" : sep);
                 }
                 else
                 {
-                    a += find(A[i]);
+                    _var += A[i] + ((i == A.Count - 1) ? "" : sep);
                 }
                 if (A[i] == "}")
                 {
-                    flag = false;
+                    flag--;
+                    if (flag == 0) a += forvar(_var);
                 }
             }
             return a;
@@ -587,24 +633,26 @@ namespace Consolesoft
         static string Collect_ns(List<string> A, int j)
         {
             string a = "";
-            bool flag = false;
+            string _var = "";
+            int flag = 0;
             for (int i = j; i < A.Count(); i++)
             {
                 if (A[i] == "{")
                 {
-                    flag = true;
+                    flag ++;
                 }
-                if (!flag)
+                if (flag == 0)
                 {
                     a += A[i];
                 }
                 else
                 {
-                    a += find(A[i]);
+                    _var += A[i];
                 }
                 if (A[i] == "}")
                 {
-                    flag = false;
+                    flag --;
+                    if (flag == 0) a += forvar(_var);
                 }
             }
             return a;
